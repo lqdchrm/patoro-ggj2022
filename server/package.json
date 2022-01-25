@@ -1,0 +1,30 @@
+{
+  "name": "robogarden-server",
+  "version": "0.0.1",
+  "description": "GGJ 2022",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev:serv": "nodemon ../_dist/index.js  --watch ../_dist --ignore  ../_dist/public",
+    "dev:build": "tsc -w"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@tsconfig/node16": "^1.0.2",
+    "@types/express": "^4.17.13",
+    "@types/node": "^17.0.7",
+    "@types/socket.io": "^3.0.2",
+    "connect-livereload": "^0.6.1",
+    "dotenv": "^10.0.0",
+    "livereload": "^0.9.3",
+    "nodemon": "^2.0.15",
+    "ts-node": "^10.4.0",
+    "tslib": "^2.3.1",
+    "typescript": "^4.5.4"
+  },
+  "dependencies": {
+    "express": "^4.16.3",
+    "socket.io": "^4.4.0"
+  }
+}

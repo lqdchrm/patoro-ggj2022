@@ -1,0 +1,20 @@
+{
+  "name": "robogarden",
+  "version": "0.0.1",
+  "description": "GGJ 2022",
+  "private": true,
+  "engines": {
+    "node": "16.x",
+    "npm": "8.x"
+  },
+  "scripts": {
+    "build": "npm run build -ws",
+    "start": "node _dist/index.js"
+  },
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "author": "",
+  "license": "MIT"
+}
