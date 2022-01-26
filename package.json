@@ -11,7 +11,10 @@
   "scripts": {
     "clean": "shx rm -rf ./_dist",
     "dev": "nodemon --inspect --watch ./src/server.js ./src/server.js",
-    "build": "npm run clean && shx mkdir -p ./_dist && shx cp -r ./src/* ./_dist"
+    "build": "npm run clean && shx mkdir -p ./_dist && shx cp -r ./src/* ./_dist",
+    "start": "forever start ./src/server.js",
+    "stop": "forever stop ./src/server.js",
+    "restart": "forever restart ./src/server.js"
   },
   "author": "",
   "license": "MIT",
@@ -20,6 +23,7 @@
     "socket.io": "^4.4.1"
   },
   "devDependencies": {
+    "forever": "^4.0.2",
     "nodemon": "^2.0.15",
     "shx": "^0.3.4"
   }
