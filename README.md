@@ -1,7 +1,6 @@
 # tmpGGJ
 
 ```bash
-npm i
-npm run build
-npm start
+npm install
+npm run dev
 ```

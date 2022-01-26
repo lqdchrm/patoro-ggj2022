@@ -1,5 +1,5 @@
 {
-  "name": "robogarden",
+  "name": "@patoro/robogarden",
   "version": "0.0.1",
   "description": "GGJ 2022",
   "private": true,
@@ -10,13 +10,7 @@
   "main": "./src/server.js",
   "scripts": {
     "dev": "nodemon --inspect --watch ./src/server.js ./src/server.js",
-    "build": "npm run build -ws",
-    "start": "node _dist/index.js"
   },
-  "workspaces": [
-    "server",
-    "client"
-  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
