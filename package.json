@@ -7,7 +7,9 @@
     "node": "16.x",
     "npm": "8.x"
   },
+  "main": "./src/server.js",
   "scripts": {
+    "dev": "nodemon --inspect --watch ./src/server.js ./src/server.js",
     "build": "npm run build -ws",
     "start": "node _dist/index.js"
   },
@@ -16,5 +18,12 @@
     "client"
   ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.2",
+    "socket.io": "^4.4.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.15"
+  }
 }
