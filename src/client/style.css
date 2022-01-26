@@ -5,7 +5,8 @@ body { background: black; color: #ccc; display: flex; flex-direction: column; fo
 
 body > * { flex: 0 1 auto; }
 
-.topbar { width: 100vw; background: rgba(0,0,0,0.5); }
+.topbar { width: 100vw; background: rgba(255,255,255,0.2); }
+.topbar > * { display: block; }
 
 #map { position: relative; flex: 1 1 auto; }
 #map .layer { position: absolute; flex: 1 1 auto; display: flex; flex-direction: column; width: 100%; align-items: center; justify-content:flex-start; }
@@ -17,5 +18,5 @@ body > * { flex: 0 1 auto; }
 #input:focus { outline: none; }
 #form > button { background: #333; border: none; padding: 0 1rem; margin: 0.25rem; border-radius: 3px; outline: none; color: #fff; }
 
-#messages { list-style-type: none; margin: 0; padding: 0; z-index: 1; }
+#messages { list-style-type: none; margin: 0; padding: 0; z-index: 1; font-size: x-small; }
 #messages > li { padding: 0.5rem 1rem; }
