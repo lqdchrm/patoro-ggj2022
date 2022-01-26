@@ -12,6 +12,7 @@
         "christian-kohler.npm-intellisense",
         "spmeesseman.vscode-taskexplorer",
         "pflannery.vscode-versionlens",
-        "vscode-icons-team.vscode-icons"
+        "vscode-icons-team.vscode-icons",
+        "tyriar.luna-paint"
     ]
 }
