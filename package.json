@@ -9,7 +9,9 @@
   },
   "main": "./src/server.js",
   "scripts": {
+    "clean": "shx rm -rf ./_dist",
     "dev": "nodemon --inspect --watch ./src/server.js ./src/server.js",
+    "build": "npm run clean && shx mkdir -p ./_dist && shx cp -r ./src/* ./_dist"
   },
   "author": "",
   "license": "MIT",
@@ -18,6 +20,7 @@
     "socket.io": "^4.4.1"
   },
   "devDependencies": {
-    "nodemon": "^2.0.15"
+    "nodemon": "^2.0.15",
+    "shx": "^0.3.4"
   }
 }
