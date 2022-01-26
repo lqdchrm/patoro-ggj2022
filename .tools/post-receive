@@ -1,0 +1,22 @@
+#!/bin/bash
+TARGET="/home/patoro/patoro-ggj2022"
+BRANCH="release"
+PATH=$PATH:/snap/bin
+
+while read oldrev newrev ref
+do
+    # only checking out the master (or whatever branch you would like to deploy)
+    if [[ $ref = refs/heads/$BRANCH ]];
+    then
+        echo "Ref $ref received. Deploying ${BRANCH} branch to production..."
+        cd $TARGET
+        echo "Path:"
+        echo $PATH
+        git --work-tree=$TARGET --git-dir=$TARGET/.git checkout -f
+        echo "installing modules"
+        npm install
+        npm run restart || npm run start
+    else
+        echo "Ref $ref received. Doing nothing: only the ${BRANCH} branch may be deployed on this server."
+    fi
+done
