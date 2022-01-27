@@ -12,7 +12,7 @@ do
         cd $TARGET
         echo "Path:"
         echo $PATH
-        git --work-tree=$TARGET --git-dir=$TARGET/.git checkout -f
+        git --work-tree=$TARGET --git-dir=$TARGET/.git checkout -f $BRANCH
         echo "installing modules"
         npm install
         npm run restart || npm run start
