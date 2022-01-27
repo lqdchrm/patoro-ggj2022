@@ -6,6 +6,20 @@ const ioLib = require("socket.io");
 // create app
 const app = express();
 
+// add dev reload
+var env = process.env.NODE_ENV || 'development';
+if (env == "development") {
+    const livereload = require("livereload");
+    const connectLivereload = require("connect-livereload");
+    // open livereload high port and start to watch public directory for changes
+    const liveReloadServer = livereload.createServer();
+    liveReloadServer.watch(path.join(__dirname, 'client'));
+
+    console.warn("live reload activated")
+    // monkey patch every served HTML so they know of changes
+    app.use(connectLivereload());
+}
+
 // static hosting client folder
 const clientFolder = path.join(__dirname, 'client');
 app.use(express.static(clientFolder));
