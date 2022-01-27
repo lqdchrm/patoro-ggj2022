@@ -42,6 +42,7 @@ const state = new class extends EventTarget {
         state.map = await loadMap("./maps/orthogonal-outside.json");
         console.log("[STATE] ...Map loaded");
         await updateMap();
+        await updateSprites();
     }
 };
 
@@ -169,13 +170,29 @@ socket.on('chat message', function ({ from, msg }) {
 //#region renderer
 
 const uiMap = document.getElementById("map");
-
+let uiActors;
 async function updateMap() {
     // clear all
     [...uiMap.children].forEach(c => c.remove());
 
+    // define position for actor layer
+    const actorLayerPosition = 1;
+
+    // configure map
+    uiMap.style = `--h-tiles:${state.map.width};--v-tiles:${state.map.height};--tileWidth:${state.map.tileWidth}; --tileHeight:${state.map.tileHeight}`
+
     // for all layers
     for (let l = 0; l < state.map.layers.length; ++l) {
+
+        // create a layer for all sprites
+        if(l == actorLayerPosition){
+            const actorLayerDiv = document.createElement("div");
+            actorLayerDiv.classList.add("layer");
+            actorLayerDiv.classList.add("actor");
+            uiMap.appendChild(actorLayerDiv);
+            uiActors = actorLayerDiv;
+        }
+
         let layer = state.map.layers[l];
         let layerDiv = document.createElement("div");
         layerDiv.classList.add("layer");
@@ -206,6 +223,35 @@ async function updateMap() {
             tileDiv.style.height = `${state.map.tileHeight}px`;
             rowDiv.appendChild(tileDiv);
         }
+    }
+}
+
+async function updateSprites() {
+    const sampleSprite = [{
+        x: 12,
+        y: 3,
+        direction: 'down'
+    }, {
+        x: 3,
+        y: 5,
+        direction: 'left'
+    }, {
+        x: 20,
+        y: 4,
+        direction: 'right'
+    }, {
+        x: 23,
+        y: 15,
+        direction: 'up'
+    }]
+
+    for (const sprite of sampleSprite) {
+        const spriteDiv=document.createElement("div");
+        spriteDiv.style = `--x:${sprite.x};--y:${sprite.y};`;
+        spriteDiv.classList.add('sprite');
+        spriteDiv.classList.add('robot');
+        spriteDiv.classList.add(sprite.direction);
+        uiActors.appendChild(spriteDiv);
     }
 }
 
