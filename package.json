@@ -1,5 +1,5 @@
 {
-  "name": "robogarden",
+  "name": "@patoro/robogarden",
   "version": "0.0.1",
   "description": "GGJ 2022",
   "private": true,
@@ -7,14 +7,24 @@
     "node": "16.x",
     "npm": "8.x"
   },
+  "main": "./src/server.js",
   "scripts": {
-    "build": "npm run build -ws",
-    "start": "node _dist/index.js"
+    "clean": "shx rm -rf ./_dist",
+    "dev": "nodemon --inspect --watch ./src/server.js ./src/server.js",
+    "build": "npm run clean && shx mkdir -p ./_dist && shx cp -r ./src/* ./_dist",
+    "start": "forever start ./src/server.js",
+    "stop": "forever stop ./src/server.js",
+    "restart": "forever restart ./src/server.js"
   },
-  "workspaces": [
-    "server",
-    "client"
-  ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.2",
+    "socket.io": "^4.4.1"
+  },
+  "devDependencies": {
+    "forever": "^4.0.2",
+    "nodemon": "^2.0.15",
+    "shx": "^0.3.4"
+  }
 }
