@@ -28,12 +28,7 @@
     "@types/connect-livereload": "^0.6.0",
     "@types/express": "^4.17.13",
     "connect-livereload": "^0.6.1",
-    "eslint": "^7.32.0",
-    "eslint-config-standard": "^16.0.3",
-    "eslint-plugin-import": "^2.25.4",
-    "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-promise": "^5.2.0",
-    "eslint-plugin-standard": "^5.0.0",
+    "eslint": "^8.7.0",
     "livereload": "^0.9.3",
     "nodemon": "^2.0.15",
     "shx": "^0.3.4"
