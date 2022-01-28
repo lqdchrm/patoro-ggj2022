@@ -27,13 +27,21 @@ import { loadMap } from "./map-loader.js";
 //#region GameState
 const state = new class extends EventTarget {
 
+    /**
+     * @type {Record<string, {sprite:HTMLDivElement}>}
+     */
+    get players() {
+        return this._players
+    }
+
     constructor() {
         super();
         this.user = { id: null };
         this.map = {};
-        this.players = {};
+        this._players = {};
         this.events = [];
         this.messages = [];
+        this.nextTurn = undefined;
     }
 
     async init() {
@@ -43,9 +51,56 @@ const state = new class extends EventTarget {
         state.map = await loadMap("killzone","./maps/killzone");
         console.log("[STATE] ...Map loaded");
         await updateMap();
-        await updateSprites();
     }
+
+    /**
+     * 
+     * @param {direction:'up'|'down'|'left'|'right'} direction 
+     */
+    setTurn(direction) {
+        if (this.nextTurn == undefined) {
+            this.nextTurn = { direction };
+            communication.submitMove(this.nextTurn);
+            // socket.emit('turn', this.nextTurn);
+        }
+    }
+
+    /**
+     * 
+     * @param {string} playerName 
+     * @returns The player
+     */
+    addPlayer(playerName) {
+        const player = {
+            sprite: createSprite('man', 3, 3, playerName)
+        }
+        this.players[playerName] = player;
+        return player
+    }
+
+    removePlayer(playerName) {
+        if (this.players[playerName]) {
+            const player = this.players[playerName];
+            player.sprite.remove();
+            delete this.players[playerName];
+        }
+    }
+
+    updateState(update) {
+        for (let index = 0; index < update.length; index++) {
+
+            const playerMove = update[index];
+            const player = state.players[playerMove.player] ?? state.addPlayer(playerMove.player);
+
+            moveSprite(player.sprite, playerMove.direction)
+            this.nextTurn = undefined;
+        }
+    }
+
+
 };
+
+
 
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
@@ -81,6 +136,7 @@ form.addEventListener('submit', function (e) {
 document.querySelectorAll(".command").forEach(cmd => {
     cmd.addEventListener("click", (evt) => {
         socket.emit("command", cmd.id);
+        state.setTurn(cmd.id);
     });
 });
 
@@ -159,6 +215,214 @@ socket.onAny((message, ...args) => {
 socket.on('chat message', function ({ from, msg }) {
     state.messages.push(`${from}: ${msg}`);
 });
+
+
+/**
+* @type {Communication}
+*/
+let communication;
+
+class Communication extends EventTarget {
+
+    /**
+     * @type {{userId:string, game:string}}
+     */
+    get userData() {
+        return this._userData;
+    }
+    /**
+     * @type {Record<string, Move | undefined>}
+     */
+
+    get moves() {
+        return this._moves;
+    }
+
+    /**
+     * @type {() => GameState}
+     */
+    get getGameState() {
+        return this._getGameState;
+    }
+
+    /**
+     * @type {() => number}
+     */
+    get requestPlayerNumber() {
+        return this._requestPlayerNumber;
+    }
+
+    /**
+     * @type {(playerName: string) => boolean}
+     */
+    get isPlayerKnown() {
+        return this._isPlayerKnown;
+    }
+
+    /**
+     * 
+     * @param {{userId:string, game:string}}} userData 
+     * @param {()=>Gamestate)} requestGameState 
+     * @param {()=>number)} getPlayerNumber 
+     * @param {(playername:string)=>boolean} isPlayerKnown 
+     */
+    constructor(userData, requestGameState, getPlayerNumber, isPlayerKnown) {
+        super();
+        this._userData = userData;
+        this._getGameState = requestGameState;
+        this._requestPlayerNumber = getPlayerNumber;
+        this._isPlayerKnown = isPlayerKnown;
+        this._moves = {};
+
+        this.socket = socket;
+        this.socket.on('join', data => this.handleJoin(data))
+        this.socket.on('left', data => this.handleLeve(data))
+        this.socket.on('move', data => this.handleMove(data))
+        this.socket.on('gameState', data => this.handleGameState(data))
+        this.socket.on('requestGameState', data => this.handleRequestGameState(data))
+        this.send('join', userData);
+    }
+
+    /**
+     * 
+     * @param {TurnData} data 
+     */
+    submitMove(data) {
+        console.debug('try submit move Move');
+        if (!this.moves[this.userData.user]) {
+            console.debug('Submitting Move');
+            this.moves[this.userData.user] = data;
+            this.send('move', data);
+            this.CheckAllMoved();
+
+        }
+    }
+
+    requestGameState() {
+        this.send('requestGameState', {})
+    }
+
+
+    handleRequestGameState() {
+        this.send('gameState', this.getGameState());
+    }
+
+    /**
+     * 
+     * @param { GameState & UserData} data 
+     */
+    handleGameState(data) {
+        this.dispatchEvent(new CustomEvent('RecivedGameState', { detail: data }));
+
+        // const handlers = this.handlers.RecivedGameState;
+        //   if (handlers) {
+        //     for (let index = 0; index < handlers.length; index++) {
+        //       const handler = handlers[index];
+        //       handler({ state: data });
+        //     }
+        //   }
+    }
+
+    /**
+     * 
+     * @param {Join & UserData} data 
+     */
+    handleJoin(data) {
+        console.debug("recived Join", data);
+
+        if (!this.isPlayerKnown(data.user)) {
+
+            console.debug(`Player ${data.user} joind`)
+            this.send('join', this.userData);
+            this.send('gameState', this.getGameState());
+            this.dispatchEvent(new CustomEvent('AddPlayer', { detail: { player: data.user } }))
+            // const handlers = this.handlers.AddPlayer;
+            // if (handlers) {
+            //   for (let index = 0; index < handlers.length; index++) {
+            //     const handler = handlers[index];
+            //     handler({ player: data.user });
+            //   }
+            // }
+        }
+    }
+
+    /**
+     * 
+     * @param {Join & UserData} data 
+     */
+    handleLeve(data) {
+        console.debug("recived left", data);
+        if (this.isPlayerKnown(data.user)) {
+            this.dispatchEvent(new CustomEvent('RemovePlayer', { detail: data }));
+            // const handlers = this.handlers.RemovePlayer;
+            // if (handlers) {
+            //   for (let index = 0; index < handlers.length; index++) {
+            //     const handler = handlers[index];
+            //     handler({ player: data.user });
+            //   }
+            // }
+            delete this.moves[data.user];
+            this.CheckAllMoved();
+        }
+    }
+
+    /**
+     * 
+     * @param {Move & UserData} data 
+     */
+    handleMove(data) {
+
+        if (!this.moves[data.user] && this.isPlayerKnown(data.user)) {
+            console.debug(`Player ${data.user} moved`)
+
+
+            this.moves[data.user] = data;
+
+            // test if we have all moves including our own
+            this.CheckAllMoved();
+
+
+        }
+    }
+
+    CheckAllMoved() {
+        console.debug("check moves", this.moves);
+        const numberOfPlayers = this.requestPlayerNumber();
+        console.debug("check moves player count", numberOfPlayers);
+        if (Object.keys(this.moves).length == numberOfPlayers) {
+            console.debug('All Moves are present');
+            const moveArray = Object.keys(this.moves).filter(k => this.moves[k]).map(k => ({ ...this.moves[k], player: k }));
+
+            this.dispatchEvent(new CustomEvent('NewTurn', { detail: moveArray }));
+
+            // const handlers = this.handlers.NewTurn;
+            // if (handlers) {
+            //   for (let index = 0; index < handlers.length; index++) {
+            //     const handler = handlers[index];
+            //     const moveArray = Object.keys(this.moves).filter(k => this.moves[k]).map(k => ({ ...this.moves[k]!, player: k }));
+            //     handler({ moves: moveArray });
+            //   }
+            // }
+            this._moves = {};
+        }
+    }
+
+
+
+    /**
+     * 
+     * @param {string} message 
+     * @param {Object} data 
+     */
+    send(message, data) {
+        this.socket.emit(message, { ...this.userData, ...data });
+    }
+
+
+
+
+
+}
 
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
@@ -297,36 +561,82 @@ async function updateMap() {
     mapRoot.appendChild(uiMap);
 }
 
-async function updateSprites() {
-    const sampleSprite = [{
-        x: 26,
-        y: 29,
-        direction: 'down'
-    }, {
-        x: 28,
-        y: 27,
-        direction: 'left'
-    }, {
-        x: 27,
-        y: 28,
-        direction: 'right'
-    }, {
-        x: 23,
-        y: 15,
-        direction: 'up'
-    }]
 
-    for (const sprite of sampleSprite) {
-        const spriteDiv = document.createElement("div");
-        spriteDiv.style.setProperty('--x', sprite.x);
-        spriteDiv.style.setProperty('--y', sprite.y);
-        spriteDiv.classList.add('sprite');
-        spriteDiv.classList.add('man');
-        spriteDiv.classList.add(sprite.direction);
-        uiActors.appendChild(spriteDiv);
+/**
+ * 
+ * @param {'man'|'robot'} type 
+ * @param {number} x 
+ * @param {number} y 
+ * @param {string|undefined} name 
+ * @returns {HTMLDivElement} that is the sprite
+ */
+function createSprite(type, x, y, name) {
+    const spriteDiv = document.createElement("div");
+    spriteDiv.style.setProperty('--x', x);
+    spriteDiv.style.setProperty('--y', y);
+    if (name) {
+        spriteDiv.style.setProperty('--name', name);
+    }
+    spriteDiv.classList.add('sprite');
+    spriteDiv.classList.add(type);
+    spriteDiv.classList.add("down");
+    uiActors.appendChild(spriteDiv);
+    return spriteDiv;
+}
+
+/**
+ * 
+ * @param {HTMLDivElement} sprite 
+ * @param {number} x 
+ * @param {number} y 
+ */
+function setSpritePosition(sprite, x, y) {
+    sprite.style.setProperty('--x', x);
+    sprite.style.setProperty('--y', y);
+}
+
+/**
+ * 
+ * @param {HTMLDivElement} sprite 
+ * @param {'up'|'down'|'left'|'right'} direction 
+ */
+function moveSprite(sprite, direction) {
+    console.log(direction)
+    const x = parseInt(sprite.style.getPropertyValue('--x'));
+    const y = parseInt(sprite.style.getPropertyValue('--y'));
+
+    sprite.classList.remove('down');
+    sprite.classList.remove('left');
+    sprite.classList.remove('right');
+    sprite.classList.remove('up');
+
+
+
+    if (direction == 'up') {
+        sprite.style.setProperty('--y', y - 1);
+        sprite.classList.add('up');
+    } else if (direction == 'down') {
+        sprite.style.setProperty('--y', y + 1);
+        sprite.classList.add('down');
+    }
+    else if (direction == 'left') {
+        sprite.style.setProperty('--x', x - 1);
+        sprite.classList.add('left');
+    }
+    else if (direction == 'right') {
+        sprite.classList.add('right');
+        sprite.style.setProperty('--x', x + 1);
+    }
+    else {
+        throw `Unknown direction ${direction}`
     }
 }
 
+function getSpritePosition(sprite) {
+    const x = parseInt(sprite.style.getPropertyValue('--x'));
+    const y = parseInt(sprite.style.getPropertyValue('--y'));
+    return { x, y };
+}
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -343,7 +653,76 @@ async function updateSprites() {
 //#region startup
 
 (async () => {
+
+    const randomName = Math.random().toString();
+
+    const nameRegex = /user=(?<value>[^&]+)/
+    const roomRegex = /room=(?<value>[^&]+)/
+    const name = nameRegex.exec(location.search)?.groups['value'];
+    const room = roomRegex.exec(location.search)?.groups['value'];
+
+    if (!name || !room) {
+        window.location.assign(`/?user=${name ?? randomName}&room=${room ?? 'MyRoom'}`);
+        return;
+    }
+
+
+    const userData = {
+        user: name ?? randomName,
+        room: room ?? 'MyRoom'
+    };
+
     await state.init();
+
+    state.addPlayer(name);
+
+    communication = new Communication(userData, () => {
+        const result = {
+            positions: {}
+        };
+
+        for (const player of Object.values(state.players)) {
+            result.positions[player.user] =
+            {
+                position: getSpritePosition(player.sprite)
+            }
+        }
+
+
+        return result;
+    }, () => Object.keys(state.players).length,
+        (playerName) => state.players[playerName] !== undefined);
+
+    communication.addEventListener('AddPlayer', e => {
+        state.addPlayer(e.detail.player);
+    });
+
+    communication.addEventListener('RemovePlayer', e => {
+        console.debug('Remove player', e)
+        state.removePlayer(e.detail.player)
+    })
+
+
+    communication.addEventListener('NewTurn', e => {
+        console.debug('Recived New Turn', e)
+        const update = e.detail;
+
+        state.updateState(update)
+
+    })
+
+    communication.addEventListener('RecivedGameState', e => {
+        console.debug('Recived Game State', e)
+        const playerNames = Object.keys(e.detail.positions);
+        for (let index = 0; index < playerNames.length; index++) {
+            const playerName = playerNames[index];
+            const position = e.state.positions[playerName].position;
+            const player = state.players[playerName] ?? state.addPlayer(playerName);
+            setSpritePosition(player.sprite, position.x, position.y)
+        }
+
+    })
+
     state.events.push("Hello World");
 })();
 
