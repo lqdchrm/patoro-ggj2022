@@ -36,9 +36,7 @@ const state = new class extends EventTarget {
 
     constructor() {
         super();
-        this.user = {
-            id: null
-        };
+        this.user = { id: null };
         this.map = {};
         this._players = {};
         this.events = [];
@@ -59,9 +57,9 @@ const state = new class extends EventTarget {
      * 
      * @param {direction:'up'|'down'|'left'|'right'} direction 
      */
-    setTurn(nextTurn) {
-        if (this.nextTurn != undefined) {
-            this.nextTurn = nextTurn;
+    setTurn(direction) {
+        if (this.direction != undefined) {
+            this.nextTurn = { direction };
             socket.emit('turn', this.nextTurn);
         }
     }
@@ -124,6 +122,13 @@ form.addEventListener('submit', function (e) {
     }
 });
 
+document.querySelectorAll(".command").forEach(cmd => {
+    cmd.addEventListener("click", (evt) => {
+        socket.emit("command", cmd.id);
+        state.setTurn(cmd.id);
+    });
+});
+
 state.user = new Proxy(state.user, {
     set: function (target, key, value) {
         target[key] = value;
@@ -149,7 +154,7 @@ state.messages = new Proxy(state.messages, {
             var item = document.createElement('li');
             item.textContent = target[idx];
             uiMessages.appendChild(item);
-            window.scrollTo(0, document.body.scrollHeight);
+            uiMessages.scrollTo(0, uiMessages.scrollHeight);
         }
 
         return true;
@@ -607,6 +612,31 @@ function setSpritePosition(sprite, x, y) {
     sprite.style.setProperty('--y', y);
 }
 
+/**
+ * 
+ * @param {HTMLDivElement} sprite 
+ * @param {'up'|'down'|'left'|'right'} direction 
+ */
+function moveSprite(sprite, direction) {
+    const x = sprite.style.getPropertyValue('--x');
+    const y = sprite.style.getPropertyValue('--x');
+
+    if (direction == 'up') {
+        sprite.style.setProperty('--y', y - 1);
+    } else if (direction == 'down') {
+        sprite.style.setProperty('--y', y + 1);
+    }
+    else if (direction == 'left') {
+        sprite.style.setProperty('--x', y - 1);
+    }
+    else if (direction == 'right') {
+        sprite.style.setProperty('--x', y + 1);
+    }
+    else {
+        throw `Unknown direction ${direction}`
+    }
+}
+
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -678,7 +708,7 @@ function setSpritePosition(sprite, x, y) {
             const move = e.moves[index];
             const player = state.players[move.player] ?? state.addPlayer(move.player);
 
-            setSpritePosition(player.sprite, move.x, move.y)
+            moveSprite(player.sprite, move.direction)
         }
     })
 
