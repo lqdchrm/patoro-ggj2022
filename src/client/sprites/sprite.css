@@ -1,9 +1,9 @@
 /**
  * Use the `sprite` class togheter with the class for Sprite eg. "sprite robot" for the robot sprite.
  * Position the sprite using the css variables --y and --x
- * 
+ *
  * The direction of the prite can also be changed using the classes up, down, left, right
- * 
+ *
  *
  * To add a new sprite create an class and set the background image
  * and the `--frames` variable to the numbers of frames in an animation.
@@ -12,7 +12,7 @@
  */
 
  .sprite.robot {
-    background-image: url("Walk.png");
+    background-image: url("robot.png");
     --frames: 3;
 }
 .sprite.man {
@@ -38,7 +38,7 @@
 
     position: absolute;
     animation-name: sprite;
-    animation-duration: 0.8s;
+    animation-duration: 0.5s;
     animation-iteration-count: infinite;
     animation-direction: alternate;
     animation-timing-function: steps(var(--frames));

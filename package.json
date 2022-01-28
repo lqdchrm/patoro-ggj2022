@@ -25,9 +25,7 @@
     "socket.io": "^4.4.1"
   },
   "devDependencies": {
-    "@types/connect-livereload": "^0.6.0",
     "@types/express": "^4.17.13",
-    "connect-livereload": "^0.6.1",
     "eslint": "^8.7.0",
     "livereload": "^0.9.3",
     "nodemon": "^2.0.15",
