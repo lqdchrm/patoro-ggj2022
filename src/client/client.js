@@ -72,7 +72,7 @@ const state = new class extends EventTarget {
      */
     addPlayer(playerName) {
         const player = {
-            sprite: createSprite('man', 3, 3, playerName)
+            sprite: createSprite('robot', 3, 3, playerName)
         }
         this.players[playerName] = player;
         return player
