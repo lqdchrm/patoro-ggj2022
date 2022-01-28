@@ -39,7 +39,8 @@ const state = new class extends EventTarget {
     async init() {
         console.log("[STATE] Map loading...");
         // state.map = await loadMap("orthogonal-outside", "./maps");
-        state.map = await loadMap("samplemap","./maps/village");
+        //state.map = await loadMap("samplemap","./maps/village");
+        state.map = await loadMap("killzone","./maps/killzone");
         console.log("[STATE] ...Map loaded");
         await updateMap();
         await updateSprites();
