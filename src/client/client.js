@@ -39,7 +39,8 @@ const state = new class extends EventTarget {
 
     async init() {
         console.log("[STATE] Map loading...");
-        state.map = await loadMap("./maps/orthogonal-outside.json");
+        // state.map = await loadMap("orthogonal-outside", "./maps");
+        state.map = await loadMap("samplemap","./maps/village");
         console.log("[STATE] ...Map loaded");
         await updateMap();
         await updateSprites();
@@ -202,24 +203,36 @@ async function updateMap() {
                 rowDiv = document.createElement("div");
                 rowDiv.classList.add("row");
                 layerDiv.appendChild(rowDiv);
-                xPos=0;
+                xPos=0; 
                 yPos++;
             }
             xPos++;
             // new tile
-            let tileId = (layer.data[i] & 0x7FFFFFFF) - 1;
-            let tileDiv = document.createElement("div");
-            tileDiv.id = `layer_${l}_tile_${i}`;
-            tileDiv.classList.add("tile");
-            tileDiv.style.zIndex = l * state.map.height * state.map.tileHeight * 2 + yPos;
+            const [tileSetIndex, tileIndex] = layer.data[i] ?? [undefined, undefined];
+            if(tileSetIndex !== undefined && tileIndex !== undefined){
 
-            let offsetY = -(Math.floor(tileId / state.map.tilesPerRow)) * state.map.tileHeight;
-            let offsetX = -(tileId % state.map.tilesPerRow) * state.map.tileWidth;
-
-            tileDiv.style.background = `url(${state.map.imgPath}) no-repeat ${offsetX}px ${offsetY}px`;
-            tileDiv.style.width = `${state.map.tileWidth}px`;
-            tileDiv.style.height = `${state.map.tileHeight}px`;
-            rowDiv.appendChild(tileDiv);
+                const tileSet = state.map.tilesets[tileSetIndex]
+                let tileId = tileIndex;
+                let tileDiv = document.createElement("div");
+                tileDiv.id = `layer_${l}_tile_${i}`;
+                tileDiv.classList.add("tile");
+                tileDiv.style.zIndex = l * state.map.height * state.map.tileHeight * 2 + yPos;
+                
+                let offsetY = -(Math.floor(tileId / tileSet. tilesPerRow)) * tileSet.tileHeight;
+                let offsetX = -(tileId % tileSet.tilesPerRow) * tileSet.tileWidth;
+                
+                tileDiv.style.background = `url(${tileSet.imgPath}) no-repeat ${offsetX}px ${offsetY}px`;
+                tileDiv.style.width = `${tileSet.tileWidth}px`;
+                tileDiv.style.height = `${tileSet.tileHeight}px`;
+                rowDiv.appendChild(tileDiv);
+            }else{
+                let tileDiv = document.createElement("div");
+                tileDiv.id = `layer_${l}_tile_${i}`;
+                tileDiv.classList.add("tile");
+                tileDiv.style.width = `${state.map.tileWidth}px`;
+                tileDiv.style.height = `${state.map.tileHeight}px`;
+                rowDiv.appendChild(tileDiv);
+            }
             
         }
                // create a layer for all sprites if it will be positioned in next layer
@@ -239,8 +252,8 @@ async function updateSprites() {
         y: 4,
         direction: 'down'
     }, {
-        x: 12,
-        y: 7,
+        x: 18,
+        y: 9,
         direction: 'left'
     }, {
         x: 22,

@@ -1,0 +1,14 @@
+{ "columns":8,
+ "image":"[A]Flower_pipo.png",
+ "imageheight":384,
+ "imagewidth":256,
+ "margin":0,
+ "name":"[A]Flower_pipo",
+ "spacing":0,
+ "tilecount":96,
+ "tiledversion":"1.7.2",
+ "tileheight":32,
+ "tilewidth":32,
+ "type":"tileset",
+ "version":"1.6"
+}
