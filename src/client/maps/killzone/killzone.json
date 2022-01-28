@@ -35,11 +35,11 @@
  "tilesets":[
         {
          "firstgid":1,
-         "source":"main_tileset.tsx"
+         "source":"main_tileset.json"
         }, 
         {
          "firstgid":122,
-         "source":"tileset_top.tsx"
+         "source":"tileset_top.json"
         }],
  "tilewidth":32,
  "type":"map",

@@ -187,7 +187,7 @@ async function updateMap() {
     [...uiMap.children].forEach(c => c.remove());
 
     // define position for actor layer
-    const actorLayerPosition = state.map.properties.actorlayer ?? state.maplayers.length;
+    const actorLayerPosition = state.map.properties?.actorlayer ?? state.map.layers.length;
 
     // configure map
     uiMap.style = `--actor-layer:${actorLayerPosition};--h-tiles:${state.map.width};--v-tiles:${state.map.height};--tileWidth:${state.map.tileWidth}; --tileHeight:${state.map.tileHeight}`
