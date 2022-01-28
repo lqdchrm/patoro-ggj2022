@@ -13,6 +13,8 @@ export async function loadMap(src) {
         imageWidth: tileset.imagewidth,
         imageHeight: tileset.imageheight,
         tilesPerRow: Math.floor(tileset.imagewidth / tileset.tilewidth),
+        height: data.height,
+        width: data.width,
         layers: data.layers
     };
 }
