@@ -25,7 +25,7 @@ const io = new ioLib.Server(httpServer);
 
 // socket.io setup
 io.on('connection', (socket) => {
-
+    let user;
     // user connected
     console.log(`[IO] <${socket.id}> a user connected`);
     let msg = `User <${socket.id}> connected`;
@@ -33,6 +33,9 @@ io.on('connection', (socket) => {
 
     // log all messages
     socket.onAny((message, ...args) => {
+        if (args[0] && args[0].user) {
+            user = args[0].user;
+        }
         console.log(`[IO] <${socket.id}> Received: ${message}`, ...args);
         socket.broadcast.emit(message, ...args);
     });
@@ -42,6 +45,7 @@ io.on('connection', (socket) => {
         console.log(`[IO] <${socket.id}> a user disconnected: ${reason}`);
         let msg = `User <${socket.id}> disconnected: ${reason}`;
         socket.broadcast.emit('chat message', { from: socket.id, msg });
+        socket.broadcast.emit('left', { from: socket.id, user: user });
     });
 
     // handle messages
