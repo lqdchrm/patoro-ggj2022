@@ -321,7 +321,7 @@ async function updateSprites() {
         spriteDiv.style.setProperty('--x', sprite.x);
         spriteDiv.style.setProperty('--y', sprite.y);
         spriteDiv.classList.add('sprite');
-        spriteDiv.classList.add('man');
+        spriteDiv.classList.add('robot');
         spriteDiv.classList.add(sprite.direction);
         uiActors.appendChild(spriteDiv);
     }
