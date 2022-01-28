@@ -97,6 +97,10 @@ body>* {
     padding-inline-start: 4px;
 }
 
+#messages::-webkit-scrollbar {
+    display: none;
+}
+
 #messages:hover {
     left: 0;
 }

@@ -103,7 +103,7 @@ state.messages = new Proxy(state.messages, {
             var item = document.createElement('li');
             item.textContent = target[idx];
             uiMessages.appendChild(item);
-            window.scrollTo(0, document.body.scrollHeight);
+            uiMessages.scrollTo(0, uiMessages.scrollHeight);
         }
 
         return true;
@@ -183,20 +183,20 @@ async function updateMap() {
 
     // configure map
     uiMap.style = `--actor-layer:${actorLayerPosition};--h-tiles:${state.map.width};--v-tiles:${state.map.height};--tileWidth:${state.map.tileWidth}; --tileHeight:${state.map.tileHeight}`
-   
+
      // create a layer for all sprites if it will be positioned in next layer
     const actorLayerDiv = document.createElement("div");
     actorLayerDiv.classList.add("layer");
     actorLayerDiv.classList.add("actor");
     uiMap.appendChild(actorLayerDiv);
     uiActors = actorLayerDiv;
-    
+
     const animationNames = {}
 
     // for all layers
     for (let l = 0; l < state.map.layers.length; ++l) {
 
-     
+
 
         let layer = state.map.layers[l];
         let layerDiv = document.createElement("div");
@@ -213,7 +213,7 @@ async function updateMap() {
                 rowDiv = document.createElement("div");
                 rowDiv.classList.add("row");
                 layerDiv.appendChild(rowDiv);
-                xPos=0; 
+                xPos=0;
                 yPos++;
             }
             xPos++;
@@ -289,9 +289,9 @@ async function updateMap() {
                 tileDiv.style.height = `${state.map.tileHeight}px`;
                 rowDiv.appendChild(tileDiv);
             }
-            
+
         }
-             
+
     }
 }
 
