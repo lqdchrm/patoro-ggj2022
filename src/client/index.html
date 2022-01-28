@@ -12,10 +12,13 @@
         <div>Round: <span id="round"></span></div>
     </div>
 
-    <div id="map"></div>
+    <div id="main">
+        <div class="scrollbox" style="z-index: 1;">
+            <div id="map"></div>
+        </div>
+        <ul id="messages" class="scrollbox"></ul>
+    </div>
 
-    <ul id="messages"></ul>
- 
     <form id="form" action="">
       <input id="input" autocomplete="off" /><button>Send</button>
     </form>

@@ -12,7 +12,7 @@ body {
 }
 
 body {
-    background: purple;
+    background: black;
     color: #ccc;
     display: flex;
     flex-direction: column;
@@ -20,7 +20,7 @@ body {
 }
 
 body>* {
-    flex: 0 1 auto;
+    flex: 0 0 auto;
 }
 
 .topbar {
@@ -32,9 +32,25 @@ body>* {
     display: block;
 }
 
-#map {
-    position: relative;
+#main {
     flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+.scrollbox {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+}
+
+#map {
+    position: absolute;
     width: calc(1px * var(--tileWidth) * var(--h-tiles));
     height: calc(1px * var(--tileHeight) px * var(--v-tiles));
     align-self: center;
@@ -62,6 +78,31 @@ body>* {
     z-index: calc(var(--layer) * var(--v-tiles) * 2 * var(--tileHeight) + var(--y) *2);
     background-position-x: calc(-1px * var(--tileset-x)  * var(--tileWidth) );
     background-position-y: calc(-1px * var(--tileset-y)  * var(--tileHeight) );
+}
+
+#messages {
+    list-style-type: none;
+    margin: 4px 4px 4px 0;
+    width: 40%;
+    height: calc(100% - 8px);
+    font-size: small;
+    background: rgba(0,0,0,0.35);
+    position: absolute;
+    top: 0;
+    left: calc(16px - 40%);
+    transition: .15s ease-out left;
+    z-index: 2;
+    border-radius: 0 8px 8px 0;
+    border: 1px solid black;
+    padding-inline-start: 4px;
+}
+
+#messages:hover {
+    left: 0;
+}
+
+#messages>li:nth-child(odd) {
+    background: rgba(0, 0, 0, 0.3);
 }
 
 #form {
@@ -93,18 +134,6 @@ body>* {
     border-radius: 3px;
     outline: none;
     color: #fff;
-}
-
-#messages {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-    z-index: 1;
-    font-size: x-small;
-}
-
-#messages>li {
-    padding: 0.5rem 1rem;
 }
 
 
