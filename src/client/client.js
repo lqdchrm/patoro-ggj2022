@@ -179,18 +179,20 @@ socket.on('chat message', function ({ from, msg }) {
 const uiMap = document.getElementById("map");
 let uiActors;
 
-
 async function updateMap() {
+    const mapRoot = uiMap.parentNode;
+    uiMap.remove();
+
     // clear all
     [...uiMap.children].forEach(c => c.remove());
 
     // define position for actor layer
-    const actorLayerPosition = state.map.properties.actorlayer?? state.maplayers.length;
+    const actorLayerPosition = state.map.properties.actorlayer ?? state.maplayers.length;
 
     // configure map
     uiMap.style = `--actor-layer:${actorLayerPosition};--h-tiles:${state.map.width};--v-tiles:${state.map.height};--tileWidth:${state.map.tileWidth}; --tileHeight:${state.map.tileHeight}`
 
-     // create a layer for all sprites if it will be positioned in next layer
+    // create a layer for all sprites if it will be positioned in next layer
     const actorLayerDiv = document.createElement("div");
     actorLayerDiv.classList.add("layer");
     actorLayerDiv.classList.add("actor");
@@ -202,42 +204,41 @@ async function updateMap() {
     // for all layers
     for (let l = 0; l < state.map.layers.length; ++l) {
 
-
-
         let layer = state.map.layers[l];
         let layerDiv = document.createElement("div");
         layerDiv.classList.add("layer");
         uiMap.appendChild(layerDiv);
 
-        let rowDiv = null;
-        let xPos=0;
-        let yPos=0;
+        let xPos = 0;
+        let yPos = 0;
+
         // for all tiles
         for (let i = 0; i < layer.data.length; ++i) {
+
             // new row
             if (i % layer.width === 0) {
-                rowDiv = document.createElement("div");
-                rowDiv.classList.add("row");
-                layerDiv.appendChild(rowDiv);
-                xPos=0;
+                xPos = 0;
                 yPos++;
             }
             xPos++;
+
             // new tile
+            let tileDiv = document.createElement("div");
+
+            tileDiv.id = `layer_${l}_tile_${i}`;
+
+            tileDiv.classList.add("tile");
+
+            tileDiv.style.setProperty('--y', yPos);
+            tileDiv.style.setProperty('--layer', l);
+
             const [tileSetIndex, tileIndex] = layer.data[i] ?? [undefined, undefined];
-            if(tileSetIndex !== undefined && tileIndex !== undefined){
+            if (tileSetIndex !== undefined && tileIndex !== undefined) {
 
                 const tileSet = state.map.tilesets[tileSetIndex]
                 let tileId = tileIndex;
-                let tileDiv = document.createElement("div");
-                tileDiv.id = `layer_${l}_tile_${i}`;
-                tileDiv.classList.add("tile");
-                tileDiv.style.setProperty('--y', yPos);
-                tileDiv.style.setProperty('--x', xPos);
-                tileDiv.style.setProperty('--layer', l);
-
                 tileDiv.style.setProperty('--tileset-x', tileId % tileSet.tilesPerRow);
-                tileDiv.style.setProperty('--tileset-y', Math.floor(tileId / tileSet. tilesPerRow));
+                tileDiv.style.setProperty('--tileset-y', Math.floor(tileId / tileSet.tilesPerRow));
                 tileDiv.style.backgroundImage = `url(${tileSet.imgPath})`;
 
                 if (tileSet.tiles[tileId]?.animation) {
@@ -245,13 +246,10 @@ async function updateMap() {
                     const currentAnimation = tileSet.tiles[tileId]?.animation;
                     const name = `a${tileSetIndex}t${tileId}`;
 
-                    const totalTime = currentAnimation.map(x => x.duration).reduce((p,v)=>p+v);
+                    const totalTime = currentAnimation.map(x => x.duration).reduce((p, v) => p + v);
                     tileDiv.style.animation = `${name} 1s linear infinite`
 
-
                     if (!animationNames[name]) {
-
-
                         // generate animation
                         let keyframes = `@keyframes ${name} { \n`
 
@@ -267,38 +265,36 @@ async function updateMap() {
                         }
                         keyframes += `}`
 
-
-
-
                         if (document.styleSheets && document.styleSheets.length) {
                             document.styleSheets[0].insertRule(keyframes, 0);
                         } else {
                             var s = document.createElement('style');
                             s.innerHTML = keyframes;
                             document.getElementsByTagName('head')[0].appendChild(s);
-
                         }
                         animationNames[name] = true;
                     }
-
                 }
-
 
                 tileDiv.style.width = `${tileSet.tileWidth}px`;
                 tileDiv.style.height = `${tileSet.tileHeight}px`;
-                rowDiv.appendChild(tileDiv);
-            }else{
-                let tileDiv = document.createElement("div");
-                tileDiv.id = `layer_${l}_tile_${i}`;
-                tileDiv.classList.add("tile");
+                tileDiv.style.left = `${(xPos - 1) * tileSet.tileWidth}px`;
+                tileDiv.style.top = `${(yPos - 1) * tileSet.tileHeight}px`;
+            } else {
                 tileDiv.style.width = `${state.map.tileWidth}px`;
                 tileDiv.style.height = `${state.map.tileHeight}px`;
-                rowDiv.appendChild(tileDiv);
+                tileDiv.style.left = `${(xPos - 1) * state.map.tileWidth}px`;
+                tileDiv.style.top = `${(yPos - 1) * state.map.tileHeight}px`;
             }
 
+            tileDiv.setAttribute("data-x", xPos);
+            tileDiv.setAttribute("data-y", yPos);
+            tileDiv.setAttribute("data-layer", l);
+            layerDiv.appendChild(tileDiv);
         }
-
     }
+
+    mapRoot.appendChild(uiMap);
 }
 
 async function updateSprites() {
@@ -321,7 +317,7 @@ async function updateSprites() {
     }]
 
     for (const sprite of sampleSprite) {
-        const spriteDiv=document.createElement("div");
+        const spriteDiv = document.createElement("div");
         spriteDiv.style.setProperty('--x', sprite.x);
         spriteDiv.style.setProperty('--y', sprite.y);
         spriteDiv.classList.add('sprite');
