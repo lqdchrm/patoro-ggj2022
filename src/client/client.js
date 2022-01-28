@@ -171,27 +171,21 @@ socket.on('chat message', function ({ from, msg }) {
 
 const uiMap = document.getElementById("map");
 let uiActors;
+const actorLayerPosition = 1;
+
 async function updateMap() {
     // clear all
     [...uiMap.children].forEach(c => c.remove());
 
     // define position for actor layer
-    const actorLayerPosition = 1;
 
     // configure map
-    uiMap.style = `--h-tiles:${state.map.width};--v-tiles:${state.map.height};--tileWidth:${state.map.tileWidth}; --tileHeight:${state.map.tileHeight}`
+    uiMap.style = `--actor-layer:${actorLayerPosition};--h-tiles:${state.map.width};--v-tiles:${state.map.height};--tileWidth:${state.map.tileWidth}; --tileHeight:${state.map.tileHeight}`
 
     // for all layers
     for (let l = 0; l < state.map.layers.length; ++l) {
 
-        // create a layer for all sprites
-        if(l == actorLayerPosition){
-            const actorLayerDiv = document.createElement("div");
-            actorLayerDiv.classList.add("layer");
-            actorLayerDiv.classList.add("actor");
-            uiMap.appendChild(actorLayerDiv);
-            uiActors = actorLayerDiv;
-        }
+     
 
         let layer = state.map.layers[l];
         let layerDiv = document.createElement("div");
@@ -199,7 +193,8 @@ async function updateMap() {
         uiMap.appendChild(layerDiv);
 
         let rowDiv = null;
-
+        let xPos=0;
+        let yPos=0;
         // for all tiles
         for (let i = 0; i < layer.data.length; ++i) {
             // new row
@@ -207,13 +202,16 @@ async function updateMap() {
                 rowDiv = document.createElement("div");
                 rowDiv.classList.add("row");
                 layerDiv.appendChild(rowDiv);
+                xPos=0;
+                yPos++;
             }
-
+            xPos++;
             // new tile
             let tileId = (layer.data[i] & 0x7FFFFFFF) - 1;
             let tileDiv = document.createElement("div");
             tileDiv.id = `layer_${l}_tile_${i}`;
             tileDiv.classList.add("tile");
+            tileDiv.style.zIndex = l * state.map.height * state.map.tileHeight * 2 + yPos;
 
             let offsetY = -(Math.floor(tileId / state.map.tilesPerRow)) * state.map.tileHeight;
             let offsetX = -(tileId % state.map.tilesPerRow) * state.map.tileWidth;
@@ -222,22 +220,31 @@ async function updateMap() {
             tileDiv.style.width = `${state.map.tileWidth}px`;
             tileDiv.style.height = `${state.map.tileHeight}px`;
             rowDiv.appendChild(tileDiv);
+            
         }
+               // create a layer for all sprites if it will be positioned in next layer
+            if(l  == actorLayerPosition){
+                const actorLayerDiv = document.createElement("div");
+                actorLayerDiv.classList.add("layer");
+                actorLayerDiv.classList.add("actor");
+                uiMap.appendChild(actorLayerDiv);
+                uiActors = actorLayerDiv;
+            }
     }
 }
 
 async function updateSprites() {
     const sampleSprite = [{
         x: 12,
-        y: 3,
+        y: 4,
         direction: 'down'
     }, {
-        x: 3,
-        y: 5,
+        x: 12,
+        y: 7,
         direction: 'left'
     }, {
-        x: 20,
-        y: 4,
+        x: 22,
+        y: 7,
         direction: 'right'
     }, {
         x: 23,
@@ -248,8 +255,10 @@ async function updateSprites() {
     for (const sprite of sampleSprite) {
         const spriteDiv=document.createElement("div");
         spriteDiv.style = `--x:${sprite.x};--y:${sprite.y};`;
+        // spriteDiv.style.zIndex =  (actorLayerPosition )  * state.map.height * 2*state.map.tileHeight +  sprite.y;
+        // spriteDiv.style.zIndex =   actorLayerPosition * state.map.height * 2 *state.map.tileHeight+ sprite.y;
         spriteDiv.classList.add('sprite');
-        spriteDiv.classList.add('robot');
+        spriteDiv.classList.add('man');
         spriteDiv.classList.add(sprite.direction);
         uiActors.appendChild(spriteDiv);
     }
