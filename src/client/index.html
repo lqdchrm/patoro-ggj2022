@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Socket.IO chat</title>
+    <title>GGJ Trier 2022 - Patoro</title>
     <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="./sprites/sprite.css">
     <script type="module" src="./client.js"></script>
   </head>
   <body>
@@ -11,9 +12,18 @@
         <div>Round: <span id="round"></span></div>
     </div>
 
-    <div id="map"></div>
-
-    <ul id="messages"></ul>
+    <div id="main">
+        <div class="scrollbox" style="z-index: 1;">
+            <div id="map"></div>
+        </div>
+        <ul id="messages" class="scrollbox" style="z-index: 2;"></ul>
+        <div id="controls" style="z-index: 3;">
+            <button id="left" class="command">LEFT</button>
+            <button id="right" class="command">RIGHT</button>
+            <button id="up" class="command">UP</button>
+            <button id="down" class="command">DOWN</button>
+        </div>
+    </div>
 
     <form id="form" action="">
       <input id="input" autocomplete="off" /><button>Send</button>

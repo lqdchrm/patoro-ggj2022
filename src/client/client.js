@@ -26,11 +26,10 @@ import { loadMap } from "./map-loader.js";
 //  ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝    ╚══════╝   ╚═╝   ╚═╝  ╚═╝   ╚═╝   ╚══════╝
 //#region GameState
 const state = new class extends EventTarget {
+
     constructor() {
         super();
-        this.user = {
-            id: null
-        };
+        this.user = { id: null };
         this.map = {};
         this.players = {};
         this.events = [];
@@ -39,7 +38,8 @@ const state = new class extends EventTarget {
 
     async init() {
         console.log("[STATE] Map loading...");
-        state.map = await loadMap("./maps/orthogonal-outside.json");
+        // state.map = await loadMap("orthogonal-outside", "./maps");
+        state.map = await loadMap("samplemap","./maps/village");
         console.log("[STATE] ...Map loaded");
         await updateMap();
         await updateSprites();
@@ -77,6 +77,12 @@ form.addEventListener('submit', function (e) {
     }
 });
 
+document.querySelectorAll(".command").forEach(cmd => {
+    cmd.addEventListener("click", (evt) => {
+        socket.emit("command", cmd.id);
+    });
+});
+
 state.user = new Proxy(state.user, {
     set: function (target, key, value) {
         target[key] = value;
@@ -102,7 +108,7 @@ state.messages = new Proxy(state.messages, {
             var item = document.createElement('li');
             item.textContent = target[idx];
             uiMessages.appendChild(item);
-            window.scrollTo(0, document.body.scrollHeight);
+            uiMessages.scrollTo(0, uiMessages.scrollHeight);
         }
 
         return true;
@@ -171,27 +177,31 @@ socket.on('chat message', function ({ from, msg }) {
 
 const uiMap = document.getElementById("map");
 let uiActors;
+
+
 async function updateMap() {
     // clear all
     [...uiMap.children].forEach(c => c.remove());
 
     // define position for actor layer
-    const actorLayerPosition = 1;
+    const actorLayerPosition = state.map.properties.actorlayer?? state.maplayers.length;
 
     // configure map
-    uiMap.style = `--h-tiles:${state.map.width};--v-tiles:${state.map.height};--tileWidth:${state.map.tileWidth}; --tileHeight:${state.map.tileHeight}`
+    uiMap.style = `--actor-layer:${actorLayerPosition};--h-tiles:${state.map.width};--v-tiles:${state.map.height};--tileWidth:${state.map.tileWidth}; --tileHeight:${state.map.tileHeight}`
+
+     // create a layer for all sprites if it will be positioned in next layer
+    const actorLayerDiv = document.createElement("div");
+    actorLayerDiv.classList.add("layer");
+    actorLayerDiv.classList.add("actor");
+    uiMap.appendChild(actorLayerDiv);
+    uiActors = actorLayerDiv;
+
+    const animationNames = {}
 
     // for all layers
     for (let l = 0; l < state.map.layers.length; ++l) {
 
-        // create a layer for all sprites
-        if(l == actorLayerPosition){
-            const actorLayerDiv = document.createElement("div");
-            actorLayerDiv.classList.add("layer");
-            actorLayerDiv.classList.add("actor");
-            uiMap.appendChild(actorLayerDiv);
-            uiActors = actorLayerDiv;
-        }
+
 
         let layer = state.map.layers[l];
         let layerDiv = document.createElement("div");
@@ -199,7 +209,8 @@ async function updateMap() {
         uiMap.appendChild(layerDiv);
 
         let rowDiv = null;
-
+        let xPos=0;
+        let yPos=0;
         // for all tiles
         for (let i = 0; i < layer.data.length; ++i) {
             // new row
@@ -207,37 +218,100 @@ async function updateMap() {
                 rowDiv = document.createElement("div");
                 rowDiv.classList.add("row");
                 layerDiv.appendChild(rowDiv);
+                xPos=0;
+                yPos++;
+            }
+            xPos++;
+            // new tile
+            const [tileSetIndex, tileIndex] = layer.data[i] ?? [undefined, undefined];
+            if(tileSetIndex !== undefined && tileIndex !== undefined){
+
+                const tileSet = state.map.tilesets[tileSetIndex]
+                let tileId = tileIndex;
+                let tileDiv = document.createElement("div");
+                tileDiv.id = `layer_${l}_tile_${i}`;
+                tileDiv.classList.add("tile");
+                tileDiv.style.setProperty('--y', yPos);
+                tileDiv.style.setProperty('--x', xPos);
+                tileDiv.style.setProperty('--layer', l);
+
+                tileDiv.style.setProperty('--tileset-x', tileId % tileSet.tilesPerRow);
+                tileDiv.style.setProperty('--tileset-y', Math.floor(tileId / tileSet. tilesPerRow));
+                tileDiv.style.backgroundImage = `url(${tileSet.imgPath})`;
+
+                if (tileSet.tiles[tileId]?.animation) {
+
+                    const currentAnimation = tileSet.tiles[tileId]?.animation;
+                    const name = `a${tileSetIndex}t${tileId}`;
+
+                    const totalTime = currentAnimation.map(x => x.duration).reduce((p,v)=>p+v);
+                    tileDiv.style.animation = `${name} 1s linear infinite`
+
+
+                    if (!animationNames[name]) {
+
+
+                        // generate animation
+                        let keyframes = `@keyframes ${name} { \n`
+
+                        let currentDuration = 0;
+
+                        for (const frame of currentAnimation) {
+                            const frameTileId = frame.tileid;
+                            const frameDuratoin = frame.duration;
+                            const tileXPos = frameTileId % tileSet.tilesPerRow;
+                            const tileYPos = Math.floor(frameTileId / tileSet.tilesPerRow);
+                            keyframes += `${currentDuration * 100 / totalTime}% { --tileset-x: ${tileXPos};--tileset-y: ${tileYPos}; }\n`
+                            currentDuration += frameDuratoin;
+                        }
+                        keyframes += `}`
+
+
+
+
+                        if (document.styleSheets && document.styleSheets.length) {
+                            document.styleSheets[0].insertRule(keyframes, 0);
+                        } else {
+                            var s = document.createElement('style');
+                            s.innerHTML = keyframes;
+                            document.getElementsByTagName('head')[0].appendChild(s);
+
+                        }
+                        animationNames[name] = true;
+                    }
+
+                }
+
+
+                tileDiv.style.width = `${tileSet.tileWidth}px`;
+                tileDiv.style.height = `${tileSet.tileHeight}px`;
+                rowDiv.appendChild(tileDiv);
+            }else{
+                let tileDiv = document.createElement("div");
+                tileDiv.id = `layer_${l}_tile_${i}`;
+                tileDiv.classList.add("tile");
+                tileDiv.style.width = `${state.map.tileWidth}px`;
+                tileDiv.style.height = `${state.map.tileHeight}px`;
+                rowDiv.appendChild(tileDiv);
             }
 
-            // new tile
-            let tileId = (layer.data[i] & 0x7FFFFFFF) - 1;
-            let tileDiv = document.createElement("div");
-            tileDiv.id = `layer_${l}_tile_${i}`;
-            tileDiv.classList.add("tile");
-
-            let offsetY = -(Math.floor(tileId / state.map.tilesPerRow)) * state.map.tileHeight;
-            let offsetX = -(tileId % state.map.tilesPerRow) * state.map.tileWidth;
-
-            tileDiv.style.background = `url(${state.map.imgPath}) no-repeat ${offsetX}px ${offsetY}px`;
-            tileDiv.style.width = `${state.map.tileWidth}px`;
-            tileDiv.style.height = `${state.map.tileHeight}px`;
-            rowDiv.appendChild(tileDiv);
         }
+
     }
 }
 
 async function updateSprites() {
     const sampleSprite = [{
-        x: 12,
-        y: 3,
+        x: 26,
+        y: 29,
         direction: 'down'
     }, {
-        x: 3,
-        y: 5,
+        x: 28,
+        y: 27,
         direction: 'left'
     }, {
-        x: 20,
-        y: 4,
+        x: 27,
+        y: 28,
         direction: 'right'
     }, {
         x: 23,
@@ -247,9 +321,10 @@ async function updateSprites() {
 
     for (const sprite of sampleSprite) {
         const spriteDiv=document.createElement("div");
-        spriteDiv.style = `--x:${sprite.x};--y:${sprite.y};`;
+        spriteDiv.style.setProperty('--x', sprite.x);
+        spriteDiv.style.setProperty('--y', sprite.y);
         spriteDiv.classList.add('sprite');
-        spriteDiv.classList.add('robot');
+        spriteDiv.classList.add('man');
         spriteDiv.classList.add(sprite.direction);
         uiActors.appendChild(spriteDiv);
     }
