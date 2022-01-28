@@ -26,11 +26,10 @@ import { loadMap } from "./map-loader.js";
 //  ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝    ╚══════╝   ╚═╝   ╚═╝  ╚═╝   ╚═╝   ╚══════╝
 //#region GameState
 const state = new class extends EventTarget {
+
     constructor() {
         super();
-        this.user = {
-            id: null
-        };
+        this.user = { id: null };
         this.map = {};
         this.players = {};
         this.events = [];
