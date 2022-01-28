@@ -85,8 +85,10 @@ body>* {
     top: 0;
     left: 0;
     width: calc(1px * var(--tileWidth) * var(--h-tiles));
-    height: calc(1px * var(--tileHeight) px * var(--v-tiles));
+    height: calc(1px * var(--tileHeight) * var(--v-tiles));
     align-self: center;
+    margin-left: 50%;
+    transform: translateX(-50%);
 }
 
 #map .layer {
