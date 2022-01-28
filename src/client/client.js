@@ -467,6 +467,7 @@ async function updateMap() {
 
     // for all layers
     for (let l = 0; l < state.map.layers.length; ++l) {
+        if (state.map.layers[l].visible==false) continue;
 
         let layer = state.map.layers[l];
         let layerDiv = document.createElement("div");
