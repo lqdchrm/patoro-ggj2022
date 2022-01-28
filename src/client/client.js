@@ -77,6 +77,12 @@ form.addEventListener('submit', function (e) {
     }
 });
 
+document.querySelectorAll(".command").forEach(cmd => {
+    cmd.addEventListener("click", (evt) => {
+        socket.emit("command", cmd.id);
+    });
+});
+
 state.user = new Proxy(state.user, {
     set: function (target, key, value) {
         target[key] = value;
