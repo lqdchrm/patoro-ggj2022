@@ -11,7 +11,7 @@ body > * { flex: 0 1 auto; }
 #map { position: relative; flex: 1 1 auto; width: calc(1px * var(--tileWidth) * var(--h-tiles)); height: calc(1px * var(--tileHeight) px * var(--v-tiles)); align-self: center;}
 #map .layer { position: absolute; flex: 1 1 auto; display: flex; flex-direction: column; width: 100%; align-items: center; justify-content:flex-start; }
 #map .row { display: flex; flex: 0 0 auto; flex-direction: row; }
-#map .tile { display: block; flex: 0 0 auto; }
+#map .tile { display: block; flex: 0 0 auto; z-index: calc(var(--layer) * var(--v-tiles) * 2 * var(--tileHeight) + var(--y) *2 );}
 
 #form { background: rgba(0, 0, 0, 0.15); padding: 0.25rem; display: flex; height: 3rem; box-sizing: border-box; backdrop-filter: blur(10px); }
 #input { border: none; padding: 0 1rem; flex-grow: 1; border-radius: 2rem; margin: 0.25rem; }

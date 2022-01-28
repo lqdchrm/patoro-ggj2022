@@ -55,7 +55,11 @@ export async function loadMap(mapname, folder) {
         tilesets,
         height: data.height,
         width: data.width,
-        layers: data.layers.map(updateIndex)
+        layers: data.layers.map(updateIndex),
+        properties: data?.properties.reduce((obj, v) => {
+            obj[v.name] = v.value;
+            return obj
+        }, {})
     };
 }
 

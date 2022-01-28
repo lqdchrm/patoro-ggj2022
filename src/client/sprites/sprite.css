@@ -34,7 +34,7 @@
     width: var(--sprite-width);
     height: var(--sprite-height);
     top: calc(1px * var(--y) * var(--tileHeight) - var(--sprite-height) + 1px * var(--tileHeight));
-    left: calc(1px * var(--x) * var(--tileWidth) - var(--sprite-height) / 2 + 1px * var(--tileWidth) / 2);
+    left: calc(1px * var(--x) * var(--tileWidth) - var(--sprite-width) / 2 + 1px * var(--tileWidth) / 2);
 
     position: absolute;
     animation-name: sprite;
@@ -43,7 +43,7 @@
     animation-direction: alternate;
     animation-timing-function: steps(var(--frames));
     transition: top 1s, left 1s;
-    z-index: calc(var(--actor-layer) * var(--v-tiles) * 2 * var(--tileHeight) + var(--y));
+    z-index: calc(var(--actor-layer) * var(--v-tiles) * 2 * var(--tileHeight) + var(--y) * 2  + 1);
 }
 
 *[debug] .sprite {
@@ -53,11 +53,11 @@
 }
 
 .sprite.right {
-    background-position-y: calc(-1 * 100% * 1);
+    background-position-y: calc(-1 * 100% * 2);
 }
 
 .sprite.up {
-    background-position-y: calc(-1 * 100% * 2);
+    background-position-y: calc(-1 * 100% * 3);
 }
 
 .sprite.down {
@@ -65,7 +65,7 @@
 }
 
 .sprite.left {
-    background-position-y: calc(-1 * 100% * 3);
+    background-position-y: calc(-1 * 100% * 1);
 }
 
 @keyframes sprite {
