@@ -26,11 +26,10 @@ import { loadMap } from "./map-loader.js";
 //  ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝    ╚══════╝   ╚═╝   ╚═╝  ╚═╝   ╚═╝   ╚══════╝
 //#region GameState
 const state = new class extends EventTarget {
+
     constructor() {
         super();
-        this.user = {
-            id: null
-        };
+        this.user = { id: null };
         this.map = {};
         this.players = {};
         this.events = [];
@@ -76,6 +75,12 @@ form.addEventListener('submit', function (e) {
         socket.emit('chat message', input.value);
         input.value = '';
     }
+});
+
+document.querySelectorAll(".command").forEach(cmd => {
+    cmd.addEventListener("click", (evt) => {
+        socket.emit("command", cmd.id);
+    });
 });
 
 state.user = new Proxy(state.user, {
