@@ -50,7 +50,6 @@ const state = new class extends EventTarget {
         state.map = await loadMap("samplemap", "./maps/village");
         console.log("[STATE] ...Map loaded");
         await updateMap();
-        await updateSprites();
     }
 
     /**
@@ -58,9 +57,10 @@ const state = new class extends EventTarget {
      * @param {direction:'up'|'down'|'left'|'right'} direction 
      */
     setTurn(direction) {
-        if (this.direction != undefined) {
+        if (this.nextTurn == undefined) {
             this.nextTurn = { direction };
-            socket.emit('turn', this.nextTurn);
+            communication.submitMove(this.nextTurn);
+            // socket.emit('turn', this.nextTurn);
         }
     }
 
@@ -85,6 +85,16 @@ const state = new class extends EventTarget {
         }
     }
 
+    updateState(update) {
+        for (let index = 0; index < update.length; index++) {
+
+            const playerMove = update[index];
+            const player = state.players[playerMove.player] ?? state.addPlayer(playerMove.player);
+
+            moveSprite(player.sprite, playerMove.direction)
+            this.nextTurn = undefined;
+        }
+    }
 
 
 };
@@ -206,6 +216,10 @@ socket.on('chat message', function ({ from, msg }) {
 });
 
 
+/**
+* @type {Communication}
+*/
+let communication;
 
 class Communication extends EventTarget {
 
@@ -257,6 +271,8 @@ class Communication extends EventTarget {
         this._getGameState = requestGameState;
         this._requestPlayerNumber = getPlayerNumber;
         this._isPlayerKnown = isPlayerKnown;
+        this._moves = {};
+
         this.socket = socket;
         this.socket.on('join', data => this.handleJoin(data))
         this.socket.on('left', data => this.handleLeve(data))
@@ -295,7 +311,7 @@ class Communication extends EventTarget {
      * @param { GameState & UserData} data 
      */
     handleGameState(data) {
-        this.dispatchEvent(new CustomEvent('RecivedGameState', { state: data }));
+        this.dispatchEvent(new CustomEvent('RecivedGameState', { detail: data }));
 
         // const handlers = this.handlers.RecivedGameState;
         //   if (handlers) {
@@ -318,7 +334,7 @@ class Communication extends EventTarget {
             console.debug(`Player ${data.user} joind`)
             this.send('join', this.userData);
             this.send('gameState', this.getGameState());
-            this.dispatchEvent(new CustomEvent('AddPlayer', { player: data.user }))
+            this.dispatchEvent(new CustomEvent('AddPlayer', { detail: { player: data.user } }))
             // const handlers = this.handlers.AddPlayer;
             // if (handlers) {
             //   for (let index = 0; index < handlers.length; index++) {
@@ -336,7 +352,7 @@ class Communication extends EventTarget {
     handleLeve(data) {
         console.debug("recived left", data);
         if (this.isPlayerKnown(data.user)) {
-            this.dispatchEvent('RemovePlayer', data);
+            this.dispatchEvent(new CustomEvent('RemovePlayer', { detail: data }));
             // const handlers = this.handlers.RemovePlayer;
             // if (handlers) {
             //   for (let index = 0; index < handlers.length; index++) {
@@ -376,7 +392,7 @@ class Communication extends EventTarget {
             console.debug('All Moves are present');
             const moveArray = Object.keys(this.moves).filter(k => this.moves[k]).map(k => ({ ...this.moves[k], player: k }));
 
-            this.dispatchEvent('NewTurn', { moves: moveArray });
+            this.dispatchEvent(new CustomEvent('NewTurn', { detail: moveArray }));
 
             // const handlers = this.handlers.NewTurn;
             // if (handlers) {
@@ -386,7 +402,7 @@ class Communication extends EventTarget {
             //     handler({ moves: moveArray });
             //   }
             // }
-            this.moves = {};
+            this._moves = {};
         }
     }
 
@@ -548,40 +564,10 @@ async function updateMap() {
     }
 }
 
-async function updateSprites() {
-    const sampleSprite = [{
-        x: 26,
-        y: 29,
-        direction: 'down'
-    }, {
-        x: 28,
-        y: 27,
-        direction: 'left'
-    }, {
-        x: 27,
-        y: 28,
-        direction: 'right'
-    }, {
-        x: 23,
-        y: 15,
-        direction: 'up'
-    }]
-
-    for (const sprite of sampleSprite) {
-        const spriteDiv = document.createElement("div");
-        spriteDiv.style.setProperty('--x', sprite.x);
-        spriteDiv.style.setProperty('--y', sprite.y);
-        spriteDiv.classList.add('sprite');
-        spriteDiv.classList.add('man');
-        spriteDiv.classList.add(sprite.direction);
-        uiActors.appendChild(spriteDiv);
-    }
-}
-
 
 /**
  * 
- * @param {'man'} type 
+ * @param {'man'|'robot'} type 
  * @param {number} x 
  * @param {number} y 
  * @param {string|undefined} name 
@@ -618,25 +604,42 @@ function setSpritePosition(sprite, x, y) {
  * @param {'up'|'down'|'left'|'right'} direction 
  */
 function moveSprite(sprite, direction) {
-    const x = sprite.style.getPropertyValue('--x');
-    const y = sprite.style.getPropertyValue('--x');
+    console.log(direction)
+    const x = parseInt(sprite.style.getPropertyValue('--x'));
+    const y = parseInt(sprite.style.getPropertyValue('--y'));
+
+    sprite.classList.remove('down');
+    sprite.classList.remove('left');
+    sprite.classList.remove('right');
+    sprite.classList.remove('up');
+
+
 
     if (direction == 'up') {
         sprite.style.setProperty('--y', y - 1);
+        sprite.classList.add('up');
     } else if (direction == 'down') {
         sprite.style.setProperty('--y', y + 1);
+        sprite.classList.add('down');
     }
     else if (direction == 'left') {
-        sprite.style.setProperty('--x', y - 1);
+        sprite.style.setProperty('--x', x - 1);
+        sprite.classList.add('left');
     }
     else if (direction == 'right') {
-        sprite.style.setProperty('--x', y + 1);
+        sprite.classList.add('right');
+        sprite.style.setProperty('--x', x + 1);
     }
     else {
         throw `Unknown direction ${direction}`
     }
 }
 
+function getSpritePosition(sprite) {
+    const x = parseInt(sprite.style.getPropertyValue('--x'));
+    const y = parseInt(sprite.style.getPropertyValue('--y'));
+    return { x, y };
+}
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -672,49 +675,48 @@ function moveSprite(sprite, direction) {
         room: room ?? 'MyRoom'
     };
 
-    const communication = new Communication(userData, () => {
+    await state.init();
+
+    state.addPlayer(name);
+
+    communication = new Communication(userData, () => {
         const result = {
             positions: {}
         };
 
-        for (const player of state.players) {
+        for (const player of Object.values(state.players)) {
             result.positions[player.user] =
             {
-                position: {
-                    x: player.pos.x,
-                    y: player.pos.y
-                }
+                position: getSpritePosition(player.sprite)
             }
         }
 
 
         return result;
-    }, () => Object.keys(state.players), (playerName) => state.players[playerName] !== undefined);
+    }, () => Object.keys(state.players).length,
+        (playerName) => state.players[playerName] !== undefined);
 
     communication.addEventListener('AddPlayer', e => {
-        state.addPlayer(e.player);
+        state.addPlayer(e.detail.player);
     });
 
     communication.addEventListener('RemovePlayer', e => {
         console.debug('Remove player', e)
-        state.removePlayer(e.player)
+        state.removePlayer(e.detail.player)
     })
 
 
     communication.addEventListener('NewTurn', e => {
         console.debug('Recived New Turn', e)
-        for (let index = 0; index < e.moves.length; index++) {
+        const update = e.detail;
 
-            const move = e.moves[index];
-            const player = state.players[move.player] ?? state.addPlayer(move.player);
+        state.updateState(update)
 
-            moveSprite(player.sprite, move.direction)
-        }
     })
 
     communication.addEventListener('RecivedGameState', e => {
         console.debug('Recived Game State', e)
-        const playerNames = Object.keys(e.state.positions);
+        const playerNames = Object.keys(e.detail.positions);
         for (let index = 0; index < playerNames.length; index++) {
             const playerName = playerNames[index];
             const position = e.state.positions[playerName].position;
@@ -724,7 +726,6 @@ function moveSprite(sprite, direction) {
 
     })
 
-    await state.init();
     state.events.push("Hello World");
 })();
 

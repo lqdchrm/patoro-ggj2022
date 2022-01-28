@@ -39,6 +39,7 @@ io.on('connection', (socket) => {
     // log all messages
     socket.onAny((message, ...args) => {
         console.log(`[IO] <${socket.id}> Received: ${message}`, ...args);
+        socket.broadcast.emit(message, ...args);
     });
 
     // handle disconnect
