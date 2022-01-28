@@ -10,14 +10,9 @@ const app = express();
 var env = process.env.NODE_ENV || 'development';
 if (env == "development") {
     const livereload = require("livereload");
-    const connectLivereload = require("connect-livereload");
-    // open livereload high port and start to watch public directory for changes
     const liveReloadServer = livereload.createServer();
     liveReloadServer.watch(path.join(__dirname, 'client'));
-
     console.warn("live reload activated")
-    // monkey patch every served HTML so they know of changes
-    app.use(connectLivereload());
 }
 
 // static hosting client folder
@@ -39,6 +34,7 @@ io.on('connection', (socket) => {
     // log all messages
     socket.onAny((message, ...args) => {
         console.log(`[IO] <${socket.id}> Received: ${message}`, ...args);
+        socket.broadcast.emit(message, ...args);
     });
 
     // handle disconnect
