@@ -191,6 +191,8 @@ async function updateMap() {
     uiMap.appendChild(actorLayerDiv);
     uiActors = actorLayerDiv;
     
+    const animationNames = {}
+
     // for all layers
     for (let l = 0; l < state.map.layers.length; ++l) {
 
@@ -227,11 +229,55 @@ async function updateMap() {
                 tileDiv.style.setProperty('--y', yPos);
                 tileDiv.style.setProperty('--x', xPos);
                 tileDiv.style.setProperty('--layer', l);
-                
-                let offsetY = -(Math.floor(tileId / tileSet. tilesPerRow)) * tileSet.tileHeight;
-                let offsetX = -(tileId % tileSet.tilesPerRow) * tileSet.tileWidth;
-                
-                tileDiv.style.background = `url(${tileSet.imgPath}) no-repeat ${offsetX}px ${offsetY}px`;
+
+                tileDiv.style.setProperty('--tileset-x', tileId % tileSet.tilesPerRow);
+                tileDiv.style.setProperty('--tileset-y', Math.floor(tileId / tileSet. tilesPerRow));
+                tileDiv.style.backgroundImage = `url(${tileSet.imgPath})`;
+
+                if (tileSet.tiles[tileId]?.animation) {
+
+                    const currentAnimation = tileSet.tiles[tileId]?.animation;
+                    const name = `a${tileSetIndex}t${tileId}`;
+
+                    const totalTime = currentAnimation.map(x => x.duration).reduce((p,v)=>p+v);
+                    tileDiv.style.animation = `${name} 1s linear infinite`
+
+
+                    if (!animationNames[name]) {
+
+
+                        // generate animation
+                        let keyframes = `@keyframes ${name} { \n`
+
+                        let currentDuration = 0;
+
+                        for (const frame of currentAnimation) {
+                            const frameTileId = frame.tileid;
+                            const frameDuratoin = frame.duration;
+                            const tileXPos = frameTileId % tileSet.tilesPerRow;
+                            const tileYPos = Math.floor(frameTileId / tileSet.tilesPerRow);
+                            keyframes += `${currentDuration * 100 / totalTime}% { --tileset-x: ${tileXPos};--tileset-y: ${tileYPos}; }\n`
+                            currentDuration += frameDuratoin;
+                        }
+                        keyframes += `}`
+
+
+
+
+                        if (document.styleSheets && document.styleSheets.length) {
+                            document.styleSheets[0].insertRule(keyframes, 0);
+                        } else {
+                            var s = document.createElement('style');
+                            s.innerHTML = keyframes;
+                            document.getElementsByTagName('head')[0].appendChild(s);
+
+                        }
+                        animationNames[name] = true;
+                    }
+
+                }
+
+
                 tileDiv.style.width = `${tileSet.tileWidth}px`;
                 tileDiv.style.height = `${tileSet.tileHeight}px`;
                 rowDiv.appendChild(tileDiv);

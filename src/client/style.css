@@ -1,28 +1,114 @@
-* { box-sizing: border-box; }
+* {
+    box-sizing: border-box;
+}
 
-html, body { margin: 0; padding: 0; width: 100%; height: 100%; position: absolute; }
-body { background: purple; color: #ccc; display: flex; flex-direction: column; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+}
 
-body > * { flex: 0 1 auto; }
+body {
+    background: purple;
+    color: #ccc;
+    display: flex;
+    flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
 
-.topbar { width: 100vw; background: rgba(255,255,255,0.2); }
-.topbar > * { display: block; }
+body>* {
+    flex: 0 1 auto;
+}
 
-#map { position: relative; flex: 1 1 auto; width: calc(1px * var(--tileWidth) * var(--h-tiles)); height: calc(1px * var(--tileHeight) px * var(--v-tiles)); align-self: center;}
-#map .layer { position: absolute; flex: 1 1 auto; display: flex; flex-direction: column; width: 100%; align-items: center; justify-content:flex-start; }
-#map .row { display: flex; flex: 0 0 auto; flex-direction: row; }
-#map .tile { display: block; flex: 0 0 auto; z-index: calc(var(--layer) * var(--v-tiles) * 2 * var(--tileHeight) + var(--y) *2 );}
+.topbar {
+    width: 100vw;
+    background: rgba(255, 255, 255, 0.2);
+}
 
-#form { background: rgba(0, 0, 0, 0.15); padding: 0.25rem; display: flex; height: 3rem; box-sizing: border-box; backdrop-filter: blur(10px); }
-#input { border: none; padding: 0 1rem; flex-grow: 1; border-radius: 2rem; margin: 0.25rem; }
-#input:focus { outline: none; }
-#form > button { background: #333; border: none; padding: 0 1rem; margin: 0.25rem; border-radius: 3px; outline: none; color: #fff; }
+.topbar>* {
+    display: block;
+}
 
-#messages { list-style-type: none; margin: 0; padding: 0; z-index: 1; font-size: x-small; }
-#messages > li { padding: 0.5rem 1rem; }
+#map {
+    position: relative;
+    flex: 1 1 auto;
+    width: calc(1px * var(--tileWidth) * var(--h-tiles));
+    height: calc(1px * var(--tileHeight) px * var(--v-tiles));
+    align-self: center;
+}
 
- 
-*[debug] .tile{
+#map .layer {
+    position: absolute;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+#map .row {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: row;
+}
+
+#map .tile {
+    display: block;
+    flex: 0 0 auto;
+    z-index: calc(var(--layer) * var(--v-tiles) * 2 * var(--tileHeight) + var(--y) *2);
+    background-position-x: calc(-1px * var(--tileset-x)  * var(--tileWidth) );
+    background-position-y: calc(-1px * var(--tileset-y)  * var(--tileHeight) );
+}
+
+#form {
+    background: rgba(0, 0, 0, 0.15);
+    padding: 0.25rem;
+    display: flex;
+    height: 3rem;
+    box-sizing: border-box;
+    backdrop-filter: blur(10px);
+}
+
+#input {
+    border: none;
+    padding: 0 1rem;
+    flex-grow: 1;
+    border-radius: 2rem;
+    margin: 0.25rem;
+}
+
+#input:focus {
+    outline: none;
+}
+
+#form>button {
+    background: #333;
+    border: none;
+    padding: 0 1rem;
+    margin: 0.25rem;
+    border-radius: 3px;
+    outline: none;
+    color: #fff;
+}
+
+#messages {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    z-index: 1;
+    font-size: x-small;
+}
+
+#messages>li {
+    padding: 0.5rem 1rem;
+}
+
+
+*[debug] .tile {
     border: 1px solid blue;
     margin: -1px;
     box-sizing: content-box;

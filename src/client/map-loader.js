@@ -24,6 +24,7 @@ export async function loadMap(mapname, folder) {
             tilesPerRow: Math.floor(tileset.imagewidth / tileset.tilewidth),
             tileWidth: tileset.tilewidth,
             tileHeight: tileset.tileheight,
+            tiles: tileset.tiles?.reduce((obj, v) => { obj[v.id] = v; return obj }, {}) ?? {}
         }
 
     }
