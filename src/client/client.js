@@ -48,7 +48,7 @@ const state = new class extends EventTarget {
         console.log("[STATE] Map loading...");
         // state.map = await loadMap("orthogonal-outside", "./maps");
         //state.map = await loadMap("samplemap","./maps/village");
-        state.map = await loadMap("killzone","./maps/killzone");
+        state.map = await loadMap("killzone", "./maps/killzone");
         console.log("[STATE] ...Map loaded");
         await updateMap();
     }
@@ -281,6 +281,7 @@ class Communication extends EventTarget {
         this.socket.on('gameState', data => this.handleGameState(data))
         this.socket.on('requestGameState', data => this.handleRequestGameState(data))
         this.send('join', userData);
+        this.send('requestGameState', userData);
     }
 
     /**
@@ -334,7 +335,6 @@ class Communication extends EventTarget {
 
             console.debug(`Player ${data.user} joind`)
             this.send('join', this.userData);
-            this.send('gameState', this.getGameState());
             this.dispatchEvent(new CustomEvent('AddPlayer', { detail: { player: data.user } }))
             // const handlers = this.handlers.AddPlayer;
             // if (handlers) {
@@ -353,7 +353,7 @@ class Communication extends EventTarget {
     handleLeve(data) {
         console.debug("recived left", data);
         if (this.isPlayerKnown(data.user)) {
-            this.dispatchEvent(new CustomEvent('RemovePlayer', { detail: data }));
+            this.dispatchEvent(new CustomEvent('RemovePlayer', { detail: { player: data.user } }));
             // const handlers = this.handlers.RemovePlayer;
             // if (handlers) {
             //   for (let index = 0; index < handlers.length; index++) {
@@ -633,6 +633,8 @@ function moveSprite(sprite, direction) {
 }
 
 function getSpritePosition(sprite) {
+    if (sprite.sprite)
+        return getSpritePosition(sprite.sprite);
     const x = parseInt(sprite.style.getPropertyValue('--x'));
     const y = parseInt(sprite.style.getPropertyValue('--y'));
     return { x, y };
@@ -681,11 +683,13 @@ function getSpritePosition(sprite) {
             positions: {}
         };
 
-        for (const player of Object.values(state.players)) {
-            result.positions[player.user] =
-            {
-                position: getSpritePosition(player.sprite)
-            }
+        for (const playerName of Object.keys(state.players)) {
+            const position = getSpritePosition(state.players[playerName]);
+            if (position)
+                result.positions[playerName] =
+                {
+                    position: position
+                }
         }
 
 
@@ -716,7 +720,7 @@ function getSpritePosition(sprite) {
         const playerNames = Object.keys(e.detail.positions);
         for (let index = 0; index < playerNames.length; index++) {
             const playerName = playerNames[index];
-            const position = e.state.positions[playerName].position;
+            const position = e.detail.positions[playerName].position;
             const player = state.players[playerName] ?? state.addPlayer(playerName);
             setSpritePosition(player.sprite, position.x, position.y)
         }
