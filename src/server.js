@@ -5,7 +5,6 @@ import http from 'http';
 import { Server } from 'socket.io';
 
 import State from "./client/state.js";
-import { SocketAddress } from 'net';
 
 // create app
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
