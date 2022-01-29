@@ -64,7 +64,6 @@ class PlayerViewModel {
             setSpritePos(this.sprite, { x: x, y: y }, move ?? this.direction);
         }
     }
-
 }
 
 let viewModel = new class ViewModel {
@@ -72,7 +71,10 @@ let viewModel = new class ViewModel {
     constructor() {
         this.id = null;                 // socket id
 
-        this.players = {};              // local players view model holding the sprite
+        this.players = {};              // local playerViewModels holding the sprite
+
+        this.commandBuffer = [];
+        this.timer = setTimeout(() => { this.move("skip"); }, 1000);
 
         /**@type {TileMap} */
         this.map = {};
@@ -87,8 +89,16 @@ let viewModel = new class ViewModel {
         await updateMap();
     }
 
-    move(direction /*up, down, left, right, skip*/) {
-        socket.emit('command', direction);
+    move(command) {
+        if (this.commandBuffer.length > 4) {
+            socket.emit("command", this.commandBuffer);
+            this.commandBuffer.splice(0, this.commandBuffer.length);
+        } else {
+            this.commandBuffer.push(command);
+            console.log(this.commandBuffer);
+        }
+        clearTimeout(this.timer);
+        this.timer = setTimeout(() => { this.move("skip"); }, 1000);
     }
 
     calcSpawnPoint(id) {
@@ -212,6 +222,7 @@ var name_change_input = document.getElementById('name_change_input');
 var uiMessages      = document.getElementById('messages');
 var uiUserId        = document.getElementById('userId');
 var uiRound         = document.getElementById('round');
+var uiBuffer        = document.getElementById('buffer');
 var player_list     = document.getElementById('player_list');
 
 // chat input box
@@ -264,6 +275,14 @@ viewModel = new Proxy(viewModel, {
                 uiRound.textContent = value.round;
                 break;
         }
+        return true;
+    }
+});
+
+viewModel.commandBuffer = new Proxy(viewModel.commandBuffer, {
+    set: function (target, key, value) {
+        target[key] = value;
+        uiBuffer.textContent = target.join(",");
         return true;
     }
 });
