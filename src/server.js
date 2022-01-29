@@ -5,6 +5,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 
 import State from "./client/state.js";
+import { SocketAddress } from 'net';
 
 // create app
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -36,6 +37,7 @@ io.on('connection', (socket) => {
     console.log(`[IO] <${socket.id}> a user connected`);
     let msg = `User <${socket.id}> connected`;
     socket.broadcast.emit('chat message', { from: socket.id, msg });
+
     let state = State.addPlayer({id: socket.id, name: "Unknown"});
     io.emit('update', state);
 
@@ -61,6 +63,12 @@ io.on('connection', (socket) => {
     // handle command
     socket.on('command', (cmd) => {
         let state = State.applyCommand({id: socket.id, cmd});
+        io.emit('update', state);
+    });
+
+    // handle map
+    socket.on('map', (map) => {
+        let state = State.setMap(map);
         io.emit('update', state);
     });
 });

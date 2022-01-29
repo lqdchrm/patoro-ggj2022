@@ -85,10 +85,11 @@ let viewModel = new class ViewModel {
 
     update(serverState) {
         // add new players
-        let addedPlayers = Object.keys(serverState.players).filter(id => !this.state.players[id]);
+        let addedPlayers = Object.keys(serverState.players).filter(id => !this.state.players[id]).sort();
         addedPlayers.forEach(id => {
+            let spawnPoint =  {x: 3, y: 3};
             this.players[id] = {
-                sprite: createSprite('robot', 3, 3, id)
+                sprite: createSprite('robot', spawnPoint.x, spawnPoint.y, id),
             }
             let player = serverState.players[id];
             let moves = player.commands.slice(0, this.state.round);
@@ -99,7 +100,7 @@ let viewModel = new class ViewModel {
         });
 
         // remove old players
-        let removedPlayers = Object.keys(this.state.players).filter(id => !serverState.players[id]);
+        let removedPlayers = Object.keys(this.state.players).filter(id => !serverState.players[id]).sort();
         removedPlayers.forEach(id => {
             var player = this.players[id];
             if (player) {
@@ -274,7 +275,7 @@ async function updateMap() {
     [...uiMap.children].forEach(c => c.remove());
 
     // define position for actor layer
-    const actorLayerPosition = map.properties?.actorlayer ?? map.layers.length;
+    const actorLayerPosition = map.properties?.actorlayer?.value ?? map.layers.length;
 
     // configure map
     uiMap.style = `--actor-layer:${actorLayerPosition};--h-tiles:${map.width};--v-tiles:${map.height};--tileWidth:${map.tileWidth}; --tileHeight:${map.tileHeight}`
@@ -394,8 +395,8 @@ window.makeHole = makeHole
 
 /**
  * Make a holw in the floor
- * @param {number} x 
- * @param {number} y 
+ * @param {number} x
+ * @param {number} y
  * @returns returns if the map has now a hole in that direction
  */
 function makeHole(x, y) {
@@ -406,8 +407,6 @@ function makeHole(x, y) {
     const holeIndex = 0
     const dataTileset = viewModel.map.tilesets.filter(x => x.name == "tileset_data")[0];
     const dataTilesetIndex = viewModel.map.tilesets.indexOf(dataTileset);
-
-
 
     setMapImage(x, y, viewModel.map.layers.length - 1, dataTilesetIndex, holeIndex);
 
@@ -437,12 +436,12 @@ function makeHole(x, y) {
 
 
 /**
- * 
+ *
  * @param {number} x the left upper corner of the terain
  * @param {number} y the left upper corner of the terain
  * @param {number} width the width to set (minimum 2)
  * @param {*} height the height to set (minimum 2)
- * @param {'floor'|'hole1'|'hole2'|'hole3'|'raised'} terain 
+ * @param {'floor'|'hole1'|'hole2'|'hole3'|'raised'} terain
  */
 function setTerainBlock(x, y, width, height, terain) {
 
@@ -592,9 +591,9 @@ function setMapImage(x, y, layerIndex, tilesetIndex, tilesetTileIndex) {
 
 
 /**
- * 
- * @param {number} x 
- * @param {number} y 
+ *
+ * @param {number} x
+ * @param {number} y
  * @returns A value coresponding tho the datalyer
  */
 function getDataLayerInfo(x, y) {
