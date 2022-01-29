@@ -131,7 +131,7 @@ body>* {
         box-shadow: none;
     }
     50% {
-        box-shadow: 0 0 30px 5px yellow;
+        box-shadow: 0 0 30px 10px rgba(128, 255, 255, 0.7);
     }
     100% {
         box-shadow: none;
@@ -144,8 +144,8 @@ body>* {
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: 50%;
-    height: 50%;
+    width: 1px;
+    height: 1px;
     border-radius: 50%;
     animation: player-glow ease-in-out 2s infinite;
 }
