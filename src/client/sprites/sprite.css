@@ -97,6 +97,10 @@
     display: none;
 }
 
+.sprite.dead {
+    opacity: 0.3;
+}
+
 @keyframes sprite {
     from {
         background-position-x: 0px;
