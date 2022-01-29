@@ -1,5 +1,6 @@
 const state = {
     "round": 0,
+    /**@type{{commands:string}} */
     "players": {
 
     }
