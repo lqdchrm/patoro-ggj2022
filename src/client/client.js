@@ -118,11 +118,23 @@ let viewModel = new class ViewModel {
 
     updateMarker() {
         const currentPlayer = this.players[socket.id];
-        if (!this.marker) {
-            this.marker = createSprite("cursor", currentPlayer, currentPlayer.x, currentPlayer.y);
+        if (!this.markers) {
+            this.markers = [createSprite("cursor", currentPlayer.x, currentPlayer.y),
+            createSprite("cursor-dig", currentPlayer.x, currentPlayer.y),
+            createSprite("cursor-dig", currentPlayer.x, currentPlayer.y),
+            createSprite("cursor-dig", currentPlayer.x, currentPlayer.y),
+            createSprite("cursor-dig", currentPlayer.x, currentPlayer.y),
+            createSprite("cursor-dig", currentPlayer.x, currentPlayer.y),
+            ];
         }
+        this.markers.forEach(x => setSpriteVisibility(x, false))
+        setSpriteVisibility(this.markers[0], true)
+        let usedDigs = 0;
         const vector = { x: currentPlayer.x, y: currentPlayer.y };
-        for (const c of this.commandBuffer) {
+
+        for (let index = 0; index < this.commandBuffer.length; index++) {
+            const c = this.commandBuffer[index];
+
             switch (c) {
                 case 'left':
                     vector.x -= 1;
@@ -136,11 +148,24 @@ let viewModel = new class ViewModel {
                 case 'down':
                     vector.y += 1;
                     break;
+
+                case 'hole':
+                case 'fill':
+                    {
+                        usedDigs++;
+                        setSpriteVisibility(this.markers[usedDigs], true)
+                        const direction = index > 0
+                            ? this.commandBuffer[index - 1]
+                            : getSpriteDirection(currentPlayer.sprite);
+                        const translate = directionToVector(direction);
+                        setSpritePos(this.markers[usedDigs], { x: vector.x + translate.x, y: vector.y + translate.y }, direction)
+                    }
+                    break;
                 default:
                     break;
             }
         }
-        setSpritePos(this.marker, vector)
+        setSpritePos(this.markers[0], vector)
     }
 
     calcSpawnPoint(id) {
@@ -968,7 +993,7 @@ function getDataLayerInfo(x, y) {
     if (!currentTile) { // 0 is not set tile
         return 'none';
     }
-    const [tilesetIndex, tileIndex] = currentTile;
+    const [, tileIndex] = currentTile;
 
     switch (tileIndex) {
         case 0:
@@ -988,7 +1013,7 @@ function getDataLayerInfo(x, y) {
 
 /**
  *
- * @param {'man'|'robot'|'cursor'} type
+ * @param {'man'|'robot'|'cursor'|'cursor-dig'} type
  * @param {number} x
  * @param {number} y
  * @param {string|undefined} name
@@ -1064,6 +1089,20 @@ function getSpriteDirection(sprite) {
         return 'up';
 
     return 'down';
+}
+
+/**
+ *
+ * @param {HTMLDivElement} sprite
+ * @param {boolean} visible
+ * @returns
+ */
+function setSpriteVisibility(sprite, visible) {
+    if (visible)
+        sprite.classList.remove('hide')
+    else
+        sprite.classList.add('hide')
+
 }
 
 //#endregion

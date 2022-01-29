@@ -11,7 +11,7 @@
  * if it is not the default size.
  */
 
- .sprite.robot {
+.sprite.robot {
     background-image: url("robot.png");
     --frames: 3;
 }
@@ -19,6 +19,17 @@
 .sprite.cursor {
     background-image: url("cursor.png");
     --frames: 3;
+}
+
+.sprite.cursor-dig {
+    background-image: url("cursor-dig.png");
+    --sprite-width: 96px;
+    --sprite-height: 96px;
+    --frames: 3;
+
+    /* THis must be cented...*/
+    top: calc(1px * var(--y) * var(--tileHeight) - var(--sprite-height)/2 + 1px * var(--tileHeight)/2);
+
 }
 
 .sprite.man {
@@ -80,6 +91,10 @@
 
 .sprite.red {
     filter: hue-rotate(186deg) saturate(5.5);
+}
+
+.sprite.hide {
+    display: none;
 }
 
 @keyframes sprite {
