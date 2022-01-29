@@ -92,33 +92,49 @@ let viewModel = new class ViewModel {
         socket.emit('command', direction);
     }
 
+    calcSpawnPoint(id) {
+        let spawnPoints =  [{x: 3, y: 3}, {x: 3, y: 31}, {x: 36, y: 3}, {x: 36, y: 31}];
+
+        // sum of chars
+        let spawnPoint = spawnPoints[[...id].reduce((acc, c) => {
+            acc += c.charCodeAt(0);
+            return acc;
+        }, 0) % spawnPoints.length];
+        return spawnPoint;
+    }
+
+    addNewPlayer(id, serverState) {
+        let spawnPoint = this.calcSpawnPoint(id);
+        this.players[id] = {
+            id,
+            sprite: createSprite('robot', spawnPoint.x, spawnPoint.y, id, id === socket.id),
+        }
+        let player = serverState.players[id];
+        let moves = player.commands.slice(0, this.state.round);
+        moves.forEach(move => {
+            moveSprite(this.players[id].sprite, move);
+        })
+        add_player_to_player_list(player);
+    }
+
+    removePlayer(id) {
+        var player = this.players[id];
+        if (player) {
+            remove_player_from_player_list(player);
+            const localPlayer = player;
+            localPlayer.sprite.remove();
+            delete this.players[id];
+        }
+    }
+
     update(serverState) {
         // add new players
         let addedPlayers = Object.keys(serverState.players).filter(id => !this.state.players[id]).sort();
-        addedPlayers.forEach(id => {
-            let spawnPoint =  {x: 3, y: 3};
-            this.players[id] = {
-                id,
-                sprite: createSprite('robot', spawnPoint.x, spawnPoint.y, id),
-            }
-            let player = serverState.players[id];
-            let moves = player.commands.slice(0, this.state.round);
-            moves.forEach(move => {
-                moveSprite(this.players[id].sprite, move);
-            })
-        });
+        addedPlayers.forEach(id => this.addNewPlayer(id, serverState));
 
         // remove old players
         let removedPlayers = Object.keys(this.state.players).filter(id => !serverState.players[id]).sort();
-        removedPlayers.forEach(id => {
-            var player = this.players[id];
-            if (player) {
-                remove_player_from_player_list(player);
-                const localPlayer = player;
-                localPlayer.sprite.remove();
-                delete this.players[id];
-            }
-        });
+        removedPlayers.forEach(id => this.removePlayer(id));
 
         // update moves
         Object.values(serverState.players).forEach(player => {
@@ -653,9 +669,10 @@ function getDataLayerInfo(x, y) {
  * @param {number} x
  * @param {number} y
  * @param {string|undefined} name
+ * @param {boolean} isMe
  * @returns {HTMLDivElement} that is the sprite
  */
-function createSprite(type, x, y, name) {
+function createSprite(type, x, y, name, isMe) {
     const spriteDiv = document.createElement("div");
     spriteDiv.style.setProperty('--x', x);
     spriteDiv.style.setProperty('--y', y);
@@ -665,6 +682,9 @@ function createSprite(type, x, y, name) {
     spriteDiv.classList.add('sprite');
     spriteDiv.classList.add(type);
     spriteDiv.classList.add("down");
+    if (isMe) {
+        spriteDiv.classList.add("me");
+    }
     viewModel.mapLoading.then(() => uiActors.appendChild(spriteDiv));
     return spriteDiv;
 }
