@@ -50,6 +50,7 @@ class PlayerViewModel {
         let x = this.x;
         let y = this.y;
 
+        // handle level bounds
         var movement = directionToVector(move);
         x += movement.x;
         y += movement.y;
@@ -67,8 +68,7 @@ let viewModel = new class ViewModel {
 
         this.players = {};              // local players view model holding the sprite
 
-        this.mapLoading = null;         // promise to wait for loading finish
-        /**@type{TileMap} */
+        /**@type {TileMap} */
         this.map = {};
 
         this.messages = [];             // chat
@@ -77,8 +77,7 @@ let viewModel = new class ViewModel {
     }
 
     async init() {
-        this.mapLoading = loadMap("killzone", "./maps/killzone");
-        this.map = await this.mapLoading;
+        this.map = await loadMap("killzone", "./maps/killzone");
         await updateMap();
     }
 
@@ -153,7 +152,7 @@ let viewModel = new class ViewModel {
 
         // update UI
         this.updateUi();
-        
+
     }
 
     updateUi() {
@@ -278,41 +277,44 @@ viewModel = new Proxy(viewModel, {
 // ███████║╚██████╔╝╚██████╗██║  ██╗███████╗   ██║       ██║  ██║██║  ██║██║ ╚████║██████╔╝███████╗███████╗██║  ██║███████║
 // ╚══════╝ ╚═════╝  ╚═════╝╚═╝  ╚═╝╚══════╝   ╚═╝       ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝
 //#region Socket Handlers
-const socket = io();
+let socket = null;
 
-// on connect
-socket.on('connect', () => {
-    console.log(`[IO] Connected`);
-    viewModel.id = socket.id;
-    viewModel.messages.push(`Connected to Server`);
-});
+function connectToServer() {
+    socket = io();
 
-// on disconnect
-socket.on('disconnect', (reason) => {
-    console.log(`[IO] Disconnected: ${reason}`);
-    viewModel.messages.push(`Disconnected from Server: ${reason}`);
-    if (reason === "io server disconnect") {
-        // the disconnection was initiated by the server, you need to reconnect manually
-        socket.connect();
-    }
-});
+    // on connect
+    socket.on('connect', () => {
+        console.log(`[IO] Connected`);
+        viewModel.id = socket.id;
+        viewModel.messages.push(`Connected to Server`);
+    });
 
-// log everything
-socket.onAny((message, ...args) => {
-    console.log(`[IO] Received ${message}: `, ...args);
-});
+    // on disconnect
+    socket.on('disconnect', (reason) => {
+        console.log(`[IO] Disconnected: ${reason}`);
+        viewModel.messages.push(`Disconnected from Server: ${reason}`);
+        if (reason === "io server disconnect") {
+            // the disconnection was initiated by the server, you need to reconnect manually
+            socket.connect();
+        }
+    });
 
-// handle chat messages
-socket.on('chat message', function ({ from, msg }) {
-    viewModel.messages.push(`${from}: ${msg}`);
-});
+    // log everything
+    socket.onAny((message, ...args) => {
+        console.log(`[IO] Received ${message}: `, ...args);
+    });
 
-socket.on('update', (serverState) => {
-    console.log("[SERVER STATE]: ", serverState);
-    viewModel.update(serverState);
-    console.log("[STATE]: ", viewModel.state);
-})
+    // handle chat messages
+    socket.on('chat message', function ({ from, msg }) {
+        viewModel.messages.push(`${from}: ${msg}`);
+    });
 
+    socket.on('update', (serverState) => {
+        console.log("[SERVER STATE]: ", serverState);
+        viewModel.update(serverState);
+        console.log("[STATE]: ", viewModel.state);
+    })
+}
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -734,12 +736,12 @@ function setDataLayer(x, y, value) {
 }
 
 /**
- * 
- * @param {number} x 
- * @param {number} y 
- * @param {number|'data'|'deco'|'base'} layerIndex 
- * @param {number | TilesetNames|undefined} tilesetIndex 
- * @param {number} tilesetTileIndex 
+ *
+ * @param {number} x
+ * @param {number} y
+ * @param {number|'data'|'deco'|'base'} layerIndex
+ * @param {number | TilesetNames|undefined} tilesetIndex
+ * @param {number} tilesetTileIndex
  */
 function setMapImage(x, y, layerIndex, tilesetIndex, tilesetTileIndex) {
     if (typeof layerIndex == "string") {
@@ -847,7 +849,7 @@ function createSprite(type, x, y, name, isMe) {
     if (isMe) {
         spriteDiv.classList.add("me");
     }
-    viewModel.mapLoading.then(() => uiActors.appendChild(spriteDiv));
+    uiActors.appendChild(spriteDiv);
     return spriteDiv;
 }
 
@@ -906,6 +908,7 @@ function setSpritePos(sprite, pos, direction = null)
 
 (async () => {
     await viewModel.init();
+    connectToServer();
 })();
 
 //#endregion
