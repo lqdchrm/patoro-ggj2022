@@ -9,6 +9,7 @@
 
 import "/socket.io/socket.io.js";
 import { loadMap } from "./map-loader.js";
+import State from "./state.js";
 
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
@@ -54,8 +55,8 @@ const state = new class extends EventTarget {
     }
 
     /**
-     * 
-     * @param {direction:'up'|'down'|'left'|'right'} direction 
+     *
+     * @param {direction:'up'|'down'|'left'|'right'} direction
      */
     setTurn(direction) {
         if (this.nextTurn == undefined) {
@@ -66,8 +67,8 @@ const state = new class extends EventTarget {
     }
 
     /**
-     * 
-     * @param {string} playerName 
+     *
+     * @param {string} playerName
      * @returns The player
      */
     addPlayer(playerName) {
@@ -216,6 +217,13 @@ socket.on('chat message', function ({ from, msg }) {
     state.messages.push(`${from}: ${msg}`);
 });
 
+let state2 = State.getState();
+
+socket.on('update', (state) => {
+    state2 = state;
+    console.log("[STATE]: ", state2);
+})
+
 
 /**
 * @type {Communication}
@@ -260,11 +268,11 @@ class Communication extends EventTarget {
     }
 
     /**
-     * 
-     * @param {{userId:string, game:string}}} userData 
-     * @param {()=>Gamestate)} requestGameState 
-     * @param {()=>number)} getPlayerNumber 
-     * @param {(playername:string)=>boolean} isPlayerKnown 
+     *
+     * @param {{userId:string, game:string}}} userData
+     * @param {()=>Gamestate)} requestGameState
+     * @param {()=>number)} getPlayerNumber
+     * @param {(playername:string)=>boolean} isPlayerKnown
      */
     constructor(userData, requestGameState, getPlayerNumber, isPlayerKnown) {
         super();
@@ -285,8 +293,8 @@ class Communication extends EventTarget {
     }
 
     /**
-     * 
-     * @param {TurnData} data 
+     *
+     * @param {TurnData} data
      */
     submitMove(data) {
         console.debug('try submit move Move');
@@ -309,8 +317,8 @@ class Communication extends EventTarget {
     }
 
     /**
-     * 
-     * @param { GameState & UserData} data 
+     *
+     * @param { GameState & UserData} data
      */
     handleGameState(data) {
         this.dispatchEvent(new CustomEvent('RecivedGameState', { detail: data }));
@@ -325,8 +333,8 @@ class Communication extends EventTarget {
     }
 
     /**
-     * 
-     * @param {Join & UserData} data 
+     *
+     * @param {Join & UserData} data
      */
     handleJoin(data) {
         console.debug("recived Join", data);
@@ -347,8 +355,8 @@ class Communication extends EventTarget {
     }
 
     /**
-     * 
-     * @param {Join & UserData} data 
+     *
+     * @param {Join & UserData} data
      */
     handleLeve(data) {
         console.debug("recived left", data);
@@ -367,8 +375,8 @@ class Communication extends EventTarget {
     }
 
     /**
-     * 
-     * @param {Move & UserData} data 
+     *
+     * @param {Move & UserData} data
      */
     handleMove(data) {
 
@@ -381,7 +389,7 @@ class Communication extends EventTarget {
             // test if we have all moves including our own
             this.CheckAllMoved();
 
-
+            socket.emit("command", data);
         }
     }
 
@@ -410,9 +418,9 @@ class Communication extends EventTarget {
 
 
     /**
-     * 
-     * @param {string} message 
-     * @param {Object} data 
+     *
+     * @param {string} message
+     * @param {Object} data
      */
     send(message, data) {
         this.socket.emit(message, { ...this.userData, ...data });
@@ -564,11 +572,11 @@ async function updateMap() {
 
 
 /**
- * 
- * @param {'man'|'robot'} type 
- * @param {number} x 
- * @param {number} y 
- * @param {string|undefined} name 
+ *
+ * @param {'man'|'robot'} type
+ * @param {number} x
+ * @param {number} y
+ * @param {string|undefined} name
  * @returns {HTMLDivElement} that is the sprite
  */
 function createSprite(type, x, y, name) {
@@ -586,10 +594,10 @@ function createSprite(type, x, y, name) {
 }
 
 /**
- * 
- * @param {HTMLDivElement} sprite 
- * @param {number} x 
- * @param {number} y 
+ *
+ * @param {HTMLDivElement} sprite
+ * @param {number} x
+ * @param {number} y
  */
 function setSpritePosition(sprite, x, y) {
     sprite.style.setProperty('--x', x);
@@ -597,9 +605,9 @@ function setSpritePosition(sprite, x, y) {
 }
 
 /**
- * 
- * @param {HTMLDivElement} sprite 
- * @param {'up'|'down'|'left'|'right'} direction 
+ *
+ * @param {HTMLDivElement} sprite
+ * @param {'up'|'down'|'left'|'right'} direction
  */
 function moveSprite(sprite, direction) {
     console.log(direction)
