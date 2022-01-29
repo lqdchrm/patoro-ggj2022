@@ -26,6 +26,47 @@ import State from "./state.js";
 //  ╚████╔╝ ██║███████╗╚███╔███╔╝██║ ╚═╝ ██║╚██████╔╝██████╔╝███████╗███████╗
 //   ╚═══╝  ╚═╝╚══════╝ ╚══╝╚══╝ ╚═╝     ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝╚══════╝
 //#region ViewModel
+class PlayerViewModel {
+    constructor(id, spawnPoint) {
+        this.id = id;
+        this.spawnPoint = spawnPoint;
+        this.sprite = createSprite('robot', this.spawnPoint.x, this.spawnPoint.y, id, id === socket.id);
+    }
+
+    get x() {
+        return +this.sprite.style.getPropertyValue('--x');
+    }
+
+    get y() {
+        return +this.sprite.style.getPropertyValue('--y');
+    }
+
+    get direction() {
+        let moves = viewModel.state.players[this.id].commands;
+        return moves.length ? moves[moves.length-1] : null;
+    }
+
+    move(move, map) {
+        let x = this.x;
+        let y = this.y;
+
+        var movement = directionToVector(move);
+        console.log(x + " : " + y);
+        var new_player_position = {x: this.x + movement.x, y: this.y + movement.y};
+        console.log(new_player_position);
+        if (new_player_position.x >= 0
+            && new_player_position.x < map.width
+            && new_player_position.y >= 0
+            && new_player_position.y < map.height) {
+            x = new_player_position.x;
+            y = new_player_position.y;
+        }
+
+        setSpritePos(this.sprite, { x: x, y: y }, move ?? this.direction);
+    }
+
+}
+
 let viewModel = new class ViewModel {
 
     constructor() {
@@ -64,15 +105,10 @@ let viewModel = new class ViewModel {
 
     addNewPlayer(id, serverState) {
         let spawnPoint = this.calcSpawnPoint(id);
-        this.players[id] = {
-            id,
-            sprite: createSprite('robot', spawnPoint.x, spawnPoint.y, id, id === socket.id),
-        }
+        this.players[id] = new PlayerViewModel(id, spawnPoint);
         let player = serverState.players[id];
         let moves = player.commands.slice(0, this.state.round);
-        moves.forEach(move => {
-            moveSprite(this.players[id].sprite, move);
-        })
+        moves.forEach(move => { this.players[id].move(move, viewModel.map); });
     }
 
     removePlayer(id) {
@@ -81,6 +117,25 @@ let viewModel = new class ViewModel {
             const localPlayer = player;
             localPlayer.sprite.remove();
             delete this.players[id];
+        }
+    }
+
+    handleMove(map, player, move) {
+        switch(move) {
+            case 'left':
+            case 'right':
+            case 'up':
+            case 'down':
+                this.players[player.id].move(move, map);
+                break;
+            case'hole':
+                console.log("HOLE");
+                break;
+            case 'skip':
+                /* no-op */
+                break;
+            default:
+                throw new Error("Unknown move");
         }
     }
 
@@ -96,9 +151,7 @@ let viewModel = new class ViewModel {
         // update moves
         Object.values(serverState.players).forEach(player => {
             let moves = player.commands.slice(this.state.round, serverState.round);
-            moves.forEach(move => {
-                moveSprite(this.players[player.id].sprite, move);
-            });
+            moves.forEach(move => this.handleMove(viewModel.map, player, move));
         });
 
         // store state
@@ -106,6 +159,7 @@ let viewModel = new class ViewModel {
 
         // update UI
         this.updateUi();
+        
     }
 
     updateUi() {
@@ -154,13 +208,11 @@ let viewModel = new class ViewModel {
 
 var form              = document.getElementById('form');
 var input             = document.getElementById('input');
-var name_change_form  = document.getElementById('name_change_form');
 var name_change_input = document.getElementById('name_change_input');
 
 var uiMessages      = document.getElementById('messages');
 var uiUserId        = document.getElementById('userId');
 var uiRound         = document.getElementById('round');
-var player_list_div = document.getElementById('player_list_div');
 var player_list     = document.getElementById('player_list');
 
 // chat input box
@@ -170,14 +222,10 @@ form.addEventListener('submit', function (e) {
         socket.emit('chat message', input.value);
         input.value = '';
     }
-});
 
-// chat input box
-name_change_form.addEventListener('submit', function (e) {
-    e.preventDefault();
     if (name_change_input.value) {
         socket.emit('name change message', name_change_input.value);
-        input.value = '';
+        name_change_input.value = '';
     }
 });
 
@@ -465,7 +513,7 @@ function makeHole(x, y) {
  * @param {number} y the left upper corner of the terain
  * @param {number} width the width to set (minimum 2)
  * @param {*} height the height to set (minimum 2)
- * @param {'floor'|'hole1'|'hole2'|'hole3'|'raised'} terrainName 
+ * @param {'floor'|'hole1'|'hole2'|'hole3'|'raised'} terrainName
  */
 function setTerainBlock(x, y, width, height, terrainName) {
 
@@ -629,7 +677,7 @@ function setTerainBlock(x, y, width, height, terrainName) {
         }).reduce((o, n) => o + n, 0);
 
         /**
-         * @type {Datatypes} 
+         * @type {Datatypes}
          * */
         let newDataState = 'none';
 
@@ -647,10 +695,10 @@ function setTerainBlock(x, y, width, height, terrainName) {
 }
 
 /**
- * 
- * @param {number} x 
- * @param {number} y 
- * @param {Datatypes} value 
+ *
+ * @param {number} x
+ * @param {number} y
+ * @param {Datatypes} value
  */
 function setDataLayer(x, y, value) {
 
@@ -809,44 +857,44 @@ function createSprite(type, x, y, name, isMe) {
     return spriteDiv;
 }
 
-/**
- *
- * @param {HTMLDivElement} sprite
- * @param {'up'|'down'|'left'|'right'|'skip'} direction
- */
-function moveSprite(sprite, direction) {
-
-    const x = parseInt(sprite.style.getPropertyValue('--x'));
-    const y = parseInt(sprite.style.getPropertyValue('--y'));
-
-    sprite.classList.remove('down');
-    sprite.classList.remove('left');
-    sprite.classList.remove('right');
-    sprite.classList.remove('up');
-
+function directionToVector(direction)
+{
     switch (direction) {
         case 'up':
-            sprite.style.setProperty('--y', y - 1);
-            sprite.classList.add('up');
-            break;
+            return {x: 0, y:-1};
         case 'down':
-            sprite.style.setProperty('--y', y + 1);
-            sprite.classList.add('down');
-            break;
+            return {x: 0, y: 1};
         case 'left':
-            sprite.style.setProperty('--x', x - 1);
-            sprite.classList.add('left');
-            break;
+            return {x:-1, y: 0};
         case 'right':
-            sprite.classList.add('right');
-            sprite.style.setProperty('--x', x + 1);
-            break;
+            return {x: 1, y: 0};
         case 'skip':
-            break;
+            return {x: 0, y: 0};
         default:
             throw `Unknown direction ${direction}`
     }
 }
+/**
+ *
+ * @param {HTMLDivElement} sprite
+ * @param {{x: number, y:number}} pos
+ * @param {'up'|'down'|'left'|'right'|'skip'} direction
+ */
+
+function setSpritePos(sprite, pos, direction = null)
+{
+    sprite.style.setProperty('--x', pos.x);
+    sprite.style.setProperty('--y', pos.y);
+
+    if (direction) {
+        sprite.classList.remove('down');
+        sprite.classList.remove('left');
+        sprite.classList.remove('right');
+        sprite.classList.remove('up');
+        sprite.classList.add(direction);
+    }
+}
+
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
 
