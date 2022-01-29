@@ -171,13 +171,8 @@ let viewModel = new class ViewModel {
 
 
             switch (move) {
-                default:
-                    console.warn(`Unknown command`, move);
-                    return getDirectionsFromCommands(index - 1);
-                case 'skip':
-                case 'hole':
-                case 'fill':
-                    return getDirectionsFromCommands(index - 1);
+
+
                 case 'left':
                 case 'right':
                 case 'up':
@@ -215,6 +210,13 @@ let viewModel = new class ViewModel {
                     }
 
                     break;
+                case 'skip':
+                case 'hole':
+                case 'fill':
+                    return getDirectionsFromCommands(index - 1);
+                default:
+                    console.warn(`Unknown command`, move);
+                    return getDirectionsFromCommands(index - 1);
             }
 
 
