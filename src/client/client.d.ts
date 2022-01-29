@@ -28,13 +28,31 @@ type Tileset = {
     tilesPerRow: number;
     tileWidth: number;
     tileHeight: number;
-    tiles: Record<number, Tile>;
-    terrains: any[];
+    tiles: Record<number, Tile | undefined>;
+    terrains: Terrain[];
+}
+
+type Terrain = {
+    colors: {
+        color: string,
+        name: string,
+        probability: number,
+        tiles: number,
+        properties: Record<string, Property | undefined>
+    },
+    name: string,
+    tile: number,
+    type: "corner" | "edge" | "mixed",
+    wangtiles: {
+        tileid: number,
+        wangid: [number, number, number, number, number, number, number, number]
+    }[]
 }
 
 type Tile = {
     id: number,
-    properties: Record<string, Property>
+    properties: Record<string, Property | undefined>,
+    probability: number | undefined
 }
 
 type Property = {

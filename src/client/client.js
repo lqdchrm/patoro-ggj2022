@@ -704,13 +704,31 @@ function setTerainBlock(x, y, width, height, terrainName) {
             }
 
 
-            const foundWang = terrain.wangtiles.filter(x => arrayEquals(x.wangid, searchedWangId))[0];
-            if (!foundWang) {
+            const foundWangs = terrain.wangtiles.filter(x => arrayEquals(x.wangid, searchedWangId));
+            if (!foundWangs) {
                 console.log(`Faild to find wang tile at (${x + xPos},${y + yPos})`, Object.keys(terainNamesToTerainIndex).map(k => ({ name: k, value: terainNamesToTerainIndex[k] })).filter(x => searchedWangId.includes(x.value)).map(x => x.name))
                 return false;
             }
 
-            targetTileIds.push({ tileid: foundWang.tileid, details: foundWang.wangid });
+
+            const possibleTileIds = foundWangs.map(x => ({ propability: tileset.tiles[x.tileid]?.probability ?? 1, id: x.tileid }));
+
+            const maxProp = possibleTileIds.reduce((o, n) => o + n.propability, 0);
+            const r = Math.random() * maxProp;
+
+            let p = 0;
+            let i = 0;
+            for (i = 0; i < possibleTileIds.length; i++) {
+                const element = possibleTileIds[i];
+                p += element.propability;
+                if (p > r)
+                    break;
+            }
+            const foundWang = possibleTileIds[i].id
+
+
+
+            targetTileIds.push({ tileid: foundWang, details: foundWangs[0].wangid });
         }
     }
 
