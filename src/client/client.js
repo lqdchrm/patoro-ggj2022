@@ -26,6 +26,42 @@ import State from "./state.js";
 //  ╚████╔╝ ██║███████╗╚███╔███╔╝██║ ╚═╝ ██║╚██████╔╝██████╔╝███████╗███████╗
 //   ╚═══╝  ╚═╝╚══════╝ ╚══╝╚══╝ ╚═╝     ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝╚══════╝
 //#region ViewModel
+class PlayerViewModel {
+    constructor(id, spawnPoint) {
+        this.id = id;
+        this.spawnPoint = spawnPoint;
+        this.sprite = createSprite('robot', this.spawnPoint.x, this.spawnPoint.y, id, id === socket.id);
+    }
+
+    get x() {
+        return +this.sprite.style.getPropertyValue('--x');
+    }
+
+    get y() {
+        return +this.sprite.style.getPropertyValue('--y');
+    }
+
+    get direction() {
+        let moves = viewModel.state.players[this.id].commands;
+        return moves.length ? moves[moves.length-1] : null;
+    }
+
+    move(move) {
+        let x = this.x;
+        let y = this.y;
+
+        switch (move) {
+            case 'up': y -= 1; break;
+            case 'down': y += 1; break;
+            case 'left': x -= 1; break;
+            case 'right': x += 1; break;
+            default: break;
+        }
+        setSpritePos(this.sprite, { x, y }, move ?? this.direction);
+    }
+
+}
+
 let viewModel = new class ViewModel {
 
     constructor() {
@@ -64,15 +100,10 @@ let viewModel = new class ViewModel {
 
     addNewPlayer(id, serverState) {
         let spawnPoint = this.calcSpawnPoint(id);
-        this.players[id] = {
-            id,
-            sprite: createSprite('robot', spawnPoint.x, spawnPoint.y, id, id === socket.id),
-        }
+        this.players[id] = new PlayerViewModel(id, spawnPoint);
         let player = serverState.players[id];
         let moves = player.commands.slice(0, this.state.round);
-        moves.forEach(move => {
-            moveSprite(this.players[id].sprite, move);
-        })
+        moves.forEach(move => { this.players[id].move(move); });
     }
 
     removePlayer(id) {
@@ -90,10 +121,13 @@ let viewModel = new class ViewModel {
             case 'right':
             case 'up':
             case 'down':
-                moveSprite(this.players[player.id].sprite, move);
+                this.players[player.id].move(move);
                 break;
             case'hole':
                 console.log("HOLE");
+                break;
+            case 'skip':
+                /* no-op */
                 break;
             default:
                 throw new Error("Unknown move");
@@ -825,41 +859,24 @@ function createSprite(type, x, y, name, isMe) {
 /**
  *
  * @param {HTMLDivElement} sprite
+ * @param {{x: number, y:number}} pos
  * @param {'up'|'down'|'left'|'right'|'skip'} direction
  */
-function moveSprite(sprite, direction) {
 
-    const x = parseInt(sprite.style.getPropertyValue('--x'));
-    const y = parseInt(sprite.style.getPropertyValue('--y'));
+function setSpritePos(sprite, pos, direction = null)
+{
+    sprite.style.setProperty('--x', pos.x);
+    sprite.style.setProperty('--y', pos.y);
 
-    sprite.classList.remove('down');
-    sprite.classList.remove('left');
-    sprite.classList.remove('right');
-    sprite.classList.remove('up');
-
-    switch (direction) {
-        case 'up':
-            sprite.style.setProperty('--y', y - 1);
-            sprite.classList.add('up');
-            break;
-        case 'down':
-            sprite.style.setProperty('--y', y + 1);
-            sprite.classList.add('down');
-            break;
-        case 'left':
-            sprite.style.setProperty('--x', x - 1);
-            sprite.classList.add('left');
-            break;
-        case 'right':
-            sprite.classList.add('right');
-            sprite.style.setProperty('--x', x + 1);
-            break;
-        case 'skip':
-            break;
-        default:
-            throw `Unknown direction ${direction}`
+    if (direction) {
+        sprite.classList.remove('down');
+        sprite.classList.remove('left');
+        sprite.classList.remove('right');
+        sprite.classList.remove('up');
+        sprite.classList.add(direction);
     }
 }
+
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
 
