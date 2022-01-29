@@ -55,6 +55,12 @@ class PlayerViewModel {
         x += movement.x;
         y += movement.y;
         if (x >= 0 && x < map.width && y >= 0 && y < map.height) {
+            var tile = getDataLayerInfo(x, y);
+            if (tile == 'fall') {
+                var new_spawn = viewModel.calcSpawnPoint(this.id);
+                x = new_spawn.x;
+                y = new_spawn.y;
+            }
             setSpritePos(this.sprite, { x: x, y: y }, move ?? this.direction);
         }
     }
@@ -797,7 +803,7 @@ function setMapImage(x, y, layerIndex, tilesetIndex, tilesetTileIndex) {
  * @returns {Datatypes} A value coresponding tho the datalyer
  */
 function getDataLayerInfo(x, y) {
-    const dataLayer = viewModel.map.layers[viewModel.map.layers.length - 1];
+    const dataLayer = viewModel.map.layers.filter(x => x.name == "data")[0];
     const array = dataLayer.data;
     const layerWidth = dataLayer.width;
     const index = x + y * layerWidth;
@@ -806,10 +812,6 @@ function getDataLayerInfo(x, y) {
         return 'none';
     }
     const [tilesetIndex, tileIndex] = currentTile;
-    // should only be one tileset in this layer but we check it...
-    if (viewModel.map.tilesets[tilesetIndex].name !== 'data') {
-        console.error('Is this the correct dataset', viewModel.map.tilesets[tilesetIndex].name);
-    }
 
     switch (tileIndex) {
         case 0:
