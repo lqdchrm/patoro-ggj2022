@@ -147,7 +147,7 @@ document.querySelectorAll(".command").forEach(cmd => {
 viewModel = new Proxy(viewModel, {
     set: function (target, key, value) {
         target[key] = value;
-        switch(key) {
+        switch (key) {
             case 'id':
                 uiUserId.textContent = value;
                 break;
@@ -252,7 +252,7 @@ async function updateMap() {
 
     // for all layers
     for (let l = 0; l < map.layers.length; ++l) {
-        if (map.layers[l].visible==false) continue;
+        if (map.layers[l].visible == false) continue;
 
         let layer = map.layers[l];
         let layerDiv = document.createElement("div");
@@ -348,6 +348,107 @@ async function updateMap() {
 }
 
 
+
+/**
+ * Make a holw in the floor
+ * @param {number} x 
+ * @param {number} y 
+ * @returns returns if the map has now a hole in that direction
+ */
+function makeHole(x, y) {
+    if (getMapInfo(x, y) == "hole") {
+        return true;
+    }
+    // The hole has index 1 in data layer
+    const holeIndex = 0
+    const dataTileset = viewModel.map.tilesets.filter(x => x.name == "tileset_data")[0];
+    const dataTilesetIndex = viewModel.map.tilesets.indexOf(dataTileset);
+
+
+
+    setMapImage(x, y, viewModel.map.layers.length - 1, dataTilesetIndex, holeIndex);
+
+    const baseLayer = viewModel.map.layers.filter(x => x.name == "base")[0];
+    const baseLayerIndex = viewModel.map.layers.indexOf(baseLayer);
+
+
+    const holeTileset = viewModel.map.tilesets.filter(x => x.name == "tileset")[0];
+    const holeTilesetIndex = viewModel.map.tilesets.indexOf(holeTileset);
+
+
+    setMapImage(x, y, baseLayerIndex, holeTilesetIndex, 12);
+
+
+    //  visual layer hole = tileId: 12 tileset name :'tileset'
+
+    // use terains?
+
+    return true;
+
+}
+
+window.makeHole = makeHole;
+
+function setMapImage(x, y, layerIndex, tilesetIndex, tilesetTileIndex) {
+    const layer = viewModel.map.layers[layerIndex];
+    const layerWidth = layer.width;
+    const layerTileIndex = x + y * layerWidth;
+    const tileset = viewModel.map.tilesets[tilesetIndex];
+
+
+
+    // change render
+    const tileId = `layer_${layerIndex}_tile_${layerTileIndex}`;
+    const tileDiv = document.getElementById(tileId);
+    if (tileDiv) { // invisible layers will not be loaded
+        tileDiv.style.setProperty('--tileset-x', tilesetTileIndex % tileset.tilesPerRow);
+        tileDiv.style.setProperty('--tileset-y', Math.floor(tilesetTileIndex / tileset.tilesPerRow));
+        tileDiv.style.backgroundImage = `url(${tileset.imgPath})`;
+    }
+
+    // TODO: should it be changed? Or will this mess with incremental changes
+    // change model
+    viewModel.map.layers[layerIndex].data[layerIndex] = tilesetTileIndex;
+
+
+}
+
+
+/**
+ * 
+ * @param {number} x 
+ * @param {number} y 
+ * @returns 
+ */
+function getMapInfo(x, y) {
+    const dataLayer = viewModel.map.layers[viewModel.map.layers.length - 1];
+    const array = dataLayer.data;
+    const layerWidth = dataLayer.width;
+    const index = x + y * layerWidth;
+    const currentTile = array[index];
+    if (!currentTile) {
+        return 'empty';
+    }
+    const [tilesetIndex, tileIndex] = currentTile;
+    // should only be one tileset in this layer but we check it...
+    if (viewModel.map.tilesets[tilesetIndex].name !== 'data') {
+        console.error('Is this the correct dataset', viewModel.map.tilesets[tilesetIndex].name);
+    }
+
+    switch (tileIndex) {
+        case 0:
+            return 'hole';
+        case 1:
+            return 'move-right';
+
+        default:
+            console.error('Tileindex undefined', tileIndex);
+            return 'empty';
+    }
+
+
+}
+
 /**
  *
  * @param {'man'|'robot'} type
@@ -385,7 +486,7 @@ function moveSprite(sprite, direction) {
     sprite.classList.remove('right');
     sprite.classList.remove('up');
 
-    switch(direction) {
+    switch (direction) {
         case 'up':
             sprite.style.setProperty('--y', y - 1);
             sprite.classList.add('up');

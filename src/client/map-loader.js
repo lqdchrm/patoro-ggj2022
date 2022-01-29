@@ -19,6 +19,7 @@ export async function loadMap(mapname, folder) {
 
         return {
             imgPath,
+            name: tileset.name,
             imageWidth: tileset.imagewidth,
             imageHeight: tileset.imageheight,
             tilesPerRow: Math.floor(tileset.imagewidth / tileset.tilewidth),
