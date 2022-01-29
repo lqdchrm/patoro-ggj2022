@@ -138,12 +138,72 @@ let viewModel = new class ViewModel {
             ];
         }
         this.markers.forEach(x => setSpriteVisibility(x, false))
-        setSpriteVisibility(this.markers[0], true)
+        setSpriteVisibility(this.markers[0], false)
         let usedDigs = 0;
         const vector = { x: currentPlayer.x, y: currentPlayer.y };
 
-        for (let index = 0; index < this.commandBuffer.length; index++) {
-            const c = this.commandBuffer[index];
+        const commands = [...this.state.players[socket.id].commands.slice(this.state.round), ...this.commandBuffer];
+
+
+        function getDirectionsFromCommands(index) {
+
+            if (index < 0)
+                return getSpriteDirection(currentPlayer.sprite);
+            const move = commands[index];
+
+
+            switch (move) {
+                case 'skip':
+                case 'hole':
+                case 'fill':
+                    return getDirectionsFromCommands(index - 1);
+                case 'left':
+                case 'right':
+                case 'up':
+                case 'down':
+                    return move;
+                case 'turn_right':
+                    {
+                        const direction = getDirectionsFromCommands(index - 1);
+                        switch (direction) {
+                            case 'down':
+                                return 'left';
+                            case 'left':
+                                return 'up';
+                            case 'right':
+                                return 'down';
+                            case 'up':
+                                return 'right';
+                        }
+
+                    }
+                    break;
+                case 'turn_left':
+                    {
+                        const direction = getDirectionsFromCommands(index - 1);
+                        switch (direction) {
+                            case 'down':
+                                return 'right';
+                            case 'left':
+                                return 'down';
+                            case 'right':
+                                return 'up';
+                            case 'up':
+                                return 'left';
+                        }
+                    }
+
+                    break;
+                default:
+                    throw new Error("Unknown move");
+            }
+
+
+        }
+
+        for (let index = 0; index < commands.length; index++) {
+            const c = commands[index];
+            setSpriteVisibility(this.markers[0], true)
 
             switch (c) {
                 case 'left':
@@ -164,9 +224,7 @@ let viewModel = new class ViewModel {
                     {
                         usedDigs++;
                         setSpriteVisibility(this.markers[usedDigs], true)
-                        const direction = index > 0
-                            ? this.commandBuffer[index - 1]
-                            : getSpriteDirection(currentPlayer.sprite);
+                        const direction = getDirectionsFromCommands(index - 1);
                         const translate = directionToVector(direction);
                         setSpritePos(this.markers[usedDigs], { x: vector.x + translate.x, y: vector.y + translate.y }, direction)
                     }
@@ -175,7 +233,7 @@ let viewModel = new class ViewModel {
                     break;
             }
         }
-        setSpritePos(this.markers[0], vector)
+        setSpritePos(this.markers[0], vector, getDirectionsFromCommands(commands.length - 1))
     }
 
     calcSpawnPoint(id) {
@@ -227,48 +285,53 @@ let viewModel = new class ViewModel {
                 this.players[player.id].move(move, map);
                 break;
             case 'turn_right':
-                var sprite = this.players[player.id].sprite;
-                var direction = getSpriteDirection(this.players[player.id].sprite);
-                switch (direction) {
-                    case 'down':
-                        sprite.classList.remove('down');
-                        sprite.classList.add('left');
-                        break;
-                    case 'left':
-                        sprite.classList.remove('left');
-                        sprite.classList.add('up');
-                        break;
-                    case 'right':
-                        sprite.classList.remove('right');
-                        sprite.classList.add('down');
-                        break;
-                    case 'up':
-                        sprite.classList.remove('up');
-                        sprite.classList.add('right');
-                        break;
+                {
+                    const sprite = this.players[player.id].sprite;
+                    const direction = getSpriteDirection(this.players[player.id].sprite);
+                    switch (direction) {
+                        case 'down':
+                            sprite.classList.remove('down');
+                            sprite.classList.add('left');
+                            break;
+                        case 'left':
+                            sprite.classList.remove('left');
+                            sprite.classList.add('up');
+                            break;
+                        case 'right':
+                            sprite.classList.remove('right');
+                            sprite.classList.add('down');
+                            break;
+                        case 'up':
+                            sprite.classList.remove('up');
+                            sprite.classList.add('right');
+                            break;
+                    }
                 }
                 break;
             case 'turn_left':
-                var sprite = this.players[player.id].sprite;
-                var direction = getSpriteDirection(this.players[player.id].sprite);
-                switch (direction) {
-                    case 'down':
-                        sprite.classList.remove('down');
-                        sprite.classList.add('right');
-                        break;
-                    case 'left':
-                        sprite.classList.remove('left');
-                        sprite.classList.add('down');
-                        break;
-                    case 'right':
-                        sprite.classList.remove('right');
-                        sprite.classList.add('up');
-                        break;
-                    case 'up':
-                        sprite.classList.remove('up');
-                        sprite.classList.add('left');
-                        break;
+                {
+                    const sprite = this.players[player.id].sprite;
+                    const direction = getSpriteDirection(this.players[player.id].sprite);
+                    switch (direction) {
+                        case 'down':
+                            sprite.classList.remove('down');
+                            sprite.classList.add('right');
+                            break;
+                        case 'left':
+                            sprite.classList.remove('left');
+                            sprite.classList.add('down');
+                            break;
+                        case 'right':
+                            sprite.classList.remove('right');
+                            sprite.classList.add('up');
+                            break;
+                        case 'up':
+                            sprite.classList.remove('up');
+                            sprite.classList.add('left');
+                            break;
+                    }
                 }
+                break;
             case 'hole':
             case 'fill':
                 console.log("HOLE");
@@ -307,9 +370,6 @@ let viewModel = new class ViewModel {
                     else
                         setTerainBlock(...param, 'hole2');
                 }
-                break;
-            case 'skip':
-                /* no-op */
                 break;
             default:
                 throw new Error("Unknown move");
@@ -378,6 +438,8 @@ let viewModel = new class ViewModel {
 
     updateUi() {
         this.updateUiPlayerList();
+        this.updateMarker();
+
     }
 
     updateUiPlayerList() {
