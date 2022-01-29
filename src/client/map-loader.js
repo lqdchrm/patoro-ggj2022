@@ -19,12 +19,14 @@ export async function loadMap(mapname, folder) {
 
         return {
             imgPath,
+            name: tileset.name,
             imageWidth: tileset.imagewidth,
             imageHeight: tileset.imageheight,
             tilesPerRow: Math.floor(tileset.imagewidth / tileset.tilewidth),
             tileWidth: tileset.tilewidth,
             tileHeight: tileset.tileheight,
-            tiles: tileset.tiles?.reduce((obj, v) => { obj[v.id] = v; return obj }, {}) ?? {}
+            tiles: tileset.tiles?.reduce((obj, v) => { obj[v.id] = v; return obj }, {}) ?? {},
+            terrains: tileset.wangsets
         }
 
     }

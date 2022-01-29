@@ -9,98 +9,83 @@
 
 import "/socket.io/socket.io.js";
 import { loadMap } from "./map-loader.js";
+import State from "./state.js";
 
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
 
 
-
-
-
 ////////////////////////////////////////////////////////////////////////////////
-//  ██████╗  █████╗ ███╗   ███╗███████╗    ███████╗████████╗ █████╗ ████████╗███████╗
-// ██╔════╝ ██╔══██╗████╗ ████║██╔════╝    ██╔════╝╚══██╔══╝██╔══██╗╚══██╔══╝██╔════╝
-// ██║  ███╗███████║██╔████╔██║█████╗      ███████╗   ██║   ███████║   ██║   █████╗
-// ██║   ██║██╔══██║██║╚██╔╝██║██╔══╝      ╚════██║   ██║   ██╔══██║   ██║   ██╔══╝
-// ╚██████╔╝██║  ██║██║ ╚═╝ ██║███████╗    ███████║   ██║   ██║  ██║   ██║   ███████╗
-//  ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝    ╚══════╝   ╚═╝   ╚═╝  ╚═╝   ╚═╝   ╚══════╝
-//#region GameState
-const state = new class extends EventTarget {
-
-    /**
-     * @type {Record<string, {sprite:HTMLDivElement}>}
-     */
-    get players() {
-        return this._players
-    }
+// ██╗   ██╗██╗███████╗██╗    ██╗███╗   ███╗ ██████╗ ██████╗ ███████╗██╗
+// ██║   ██║██║██╔════╝██║    ██║████╗ ████║██╔═══██╗██╔══██╗██╔════╝██║
+// ██║   ██║██║█████╗  ██║ █╗ ██║██╔████╔██║██║   ██║██║  ██║█████╗  ██║
+// ╚██╗ ██╔╝██║██╔══╝  ██║███╗██║██║╚██╔╝██║██║   ██║██║  ██║██╔══╝  ██║
+//  ╚████╔╝ ██║███████╗╚███╔███╔╝██║ ╚═╝ ██║╚██████╔╝██████╔╝███████╗███████╗
+//   ╚═══╝  ╚═╝╚══════╝ ╚══╝╚══╝ ╚═╝     ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝╚══════╝
+//#region ViewModel
+let viewModel = new class ViewModel {
 
     constructor() {
-        super();
-        this.user = { id: null };
+        this.id = null;                 // socket id
+
+        this.players = {};              // local players view model holding the sprite
+
+        this.mapLoading = null;         // promise to wait for loading finish
         this.map = {};
-        this._players = {};
-        this.events = [];
-        this.messages = [];
-        this.nextTurn = undefined;
+
+        this.messages = [];             // chat
+
+        this.state = State.getState();  // game state
     }
 
     async init() {
-        console.log("[STATE] Map loading...");
         // state.map = await loadMap("orthogonal-outside", "./maps");
         //state.map = await loadMap("samplemap","./maps/village");
-        state.map = await loadMap("killzone", "./maps/killzone");
-        console.log("[STATE] ...Map loaded");
+        this.mapLoading = loadMap("killzone", "./maps/killzone");
+        this.map = await this.mapLoading;
         await updateMap();
     }
 
-    /**
-     * 
-     * @param {direction:'up'|'down'|'left'|'right'} direction 
-     */
-    setTurn(direction) {
-        if (this.nextTurn == undefined) {
-            this.nextTurn = { direction };
-            communication.submitMove(this.nextTurn);
-            // socket.emit('turn', this.nextTurn);
-        }
+    move(direction /*up, down, left, right, skip*/) {
+        socket.emit('command', direction);
     }
 
-    /**
-     * 
-     * @param {string} playerName 
-     * @returns The player
-     */
-    addPlayer(playerName) {
-        const player = {
-            sprite: createSprite('robot', 3, 3, playerName)
-        }
-        this.players[playerName] = player;
-        return player
+    update(serverState) {
+        // add new players
+        let addedPlayers = Object.keys(serverState.players).filter(id => !this.state.players[id]);
+        addedPlayers.forEach(id => {
+            this.players[id] = {
+                sprite: createSprite('robot', 3, 3, id)
+            }
+            let player = serverState.players[id];
+            let moves = player.commands.slice(0, this.state.round);
+            moves.forEach(move => {
+                moveSprite(this.players[id].sprite, move);
+            })
+        });
+
+        // remove old players
+        let removedPlayers = Object.keys(this.state.players).filter(id => !serverState.players[id]);
+        removedPlayers.forEach(id => {
+            if (this.players[id]) {
+                const localPlayer = this.players[id];
+                localPlayer.sprite.remove();
+                delete this.players[id];
+            }
+        });
+
+        // update moves
+        Object.values(serverState.players).forEach(player => {
+            let moves = player.commands.slice(this.state.round, serverState.round);
+            moves.forEach(move => {
+                moveSprite(this.players[player.id].sprite, move);
+            });
+        });
+
+        // store state
+        this.state = serverState;
     }
-
-    removePlayer(playerName) {
-        if (this.players[playerName]) {
-            const player = this.players[playerName];
-            player.sprite.remove();
-            delete this.players[playerName];
-        }
-    }
-
-    updateState(update) {
-        for (let index = 0; index < update.length; index++) {
-
-            const playerMove = update[index];
-            const player = state.players[playerMove.player] ?? state.addPlayer(playerMove.player);
-
-            moveSprite(player.sprite, playerMove.direction)
-            this.nextTurn = undefined;
-        }
-    }
-
-
 };
-
-
 
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
@@ -125,6 +110,7 @@ var uiMessages = document.getElementById('messages');
 var uiUserId = document.getElementById('userId');
 var uiRound = document.getElementById('round');
 
+// chat input box
 form.addEventListener('submit', function (e) {
     e.preventDefault();
     if (input.value) {
@@ -133,30 +119,8 @@ form.addEventListener('submit', function (e) {
     }
 });
 
-document.querySelectorAll(".command").forEach(cmd => {
-    cmd.addEventListener("click", (evt) => {
-        socket.emit("command", cmd.id);
-        state.setTurn(cmd.id);
-    });
-});
-
-state.user = new Proxy(state.user, {
-    set: function (target, key, value) {
-        target[key] = value;
-        uiUserId.textContent = target.id;
-        return true;
-    },
-});
-
-state.events = new Proxy(state.events, {
-    set: function (target, key, value) {
-        target[key] = value;
-        uiRound.textContent = target.length;
-        return true;
-    },
-});
-
-state.messages = new Proxy(state.messages, {
+// chat output box
+viewModel.messages = new Proxy(viewModel.messages, {
     set: function (target, key, value) {
         target[key] = value;
 
@@ -167,7 +131,30 @@ state.messages = new Proxy(state.messages, {
             uiMessages.appendChild(item);
             uiMessages.scrollTo(0, uiMessages.scrollHeight);
         }
+        return true;
+    }
+});
 
+
+// command buttons
+document.querySelectorAll(".command").forEach(cmd => {
+    cmd.addEventListener("click", () => {
+        viewModel.move(cmd.id);
+    });
+});
+
+// round
+viewModel = new Proxy(viewModel, {
+    set: function (target, key, value) {
+        target[key] = value;
+        switch (key) {
+            case 'id':
+                uiUserId.textContent = value;
+                break;
+            case 'state':
+                uiRound.textContent = value.round;
+                break;
+        }
         return true;
     }
 });
@@ -191,15 +178,15 @@ const socket = io();
 
 // on connect
 socket.on('connect', () => {
-    state.user.id = socket.id;
     console.log(`[IO] Connected`);
-    state.messages.push(`Connected to Server`);
+    viewModel.id = socket.id;
+    viewModel.messages.push(`Connected to Server`);
 });
 
 // on disconnect
 socket.on('disconnect', (reason) => {
     console.log(`[IO] Disconnected: ${reason}`);
-    state.messages.push(`Disconnected from Server: ${reason}`);
+    viewModel.messages.push(`Disconnected from Server: ${reason}`);
     if (reason === "io server disconnect") {
         // the disconnection was initiated by the server, you need to reconnect manually
         socket.connect();
@@ -213,216 +200,13 @@ socket.onAny((message, ...args) => {
 
 // handle chat messages
 socket.on('chat message', function ({ from, msg }) {
-    state.messages.push(`${from}: ${msg}`);
+    viewModel.messages.push(`${from}: ${msg}`);
 });
 
-
-/**
-* @type {Communication}
-*/
-let communication;
-
-class Communication extends EventTarget {
-
-    /**
-     * @type {{userId:string, game:string}}
-     */
-    get userData() {
-        return this._userData;
-    }
-    /**
-     * @type {Record<string, Move | undefined>}
-     */
-
-    get moves() {
-        return this._moves;
-    }
-
-    /**
-     * @type {() => GameState}
-     */
-    get getGameState() {
-        return this._getGameState;
-    }
-
-    /**
-     * @type {() => number}
-     */
-    get requestPlayerNumber() {
-        return this._requestPlayerNumber;
-    }
-
-    /**
-     * @type {(playerName: string) => boolean}
-     */
-    get isPlayerKnown() {
-        return this._isPlayerKnown;
-    }
-
-    /**
-     * 
-     * @param {{userId:string, game:string}}} userData 
-     * @param {()=>Gamestate)} requestGameState 
-     * @param {()=>number)} getPlayerNumber 
-     * @param {(playername:string)=>boolean} isPlayerKnown 
-     */
-    constructor(userData, requestGameState, getPlayerNumber, isPlayerKnown) {
-        super();
-        this._userData = userData;
-        this._getGameState = requestGameState;
-        this._requestPlayerNumber = getPlayerNumber;
-        this._isPlayerKnown = isPlayerKnown;
-        this._moves = {};
-
-        this.socket = socket;
-        this.socket.on('join', data => this.handleJoin(data))
-        this.socket.on('left', data => this.handleLeve(data))
-        this.socket.on('move', data => this.handleMove(data))
-        this.socket.on('gameState', data => this.handleGameState(data))
-        this.socket.on('requestGameState', data => this.handleRequestGameState(data))
-        this.send('join', userData);
-        this.send('requestGameState', userData);
-    }
-
-    /**
-     * 
-     * @param {TurnData} data 
-     */
-    submitMove(data) {
-        console.debug('try submit move Move');
-        if (!this.moves[this.userData.user]) {
-            console.debug('Submitting Move');
-            this.moves[this.userData.user] = data;
-            this.send('move', data);
-            this.CheckAllMoved();
-
-        }
-    }
-
-    requestGameState() {
-        this.send('requestGameState', {})
-    }
-
-
-    handleRequestGameState() {
-        this.send('gameState', this.getGameState());
-    }
-
-    /**
-     * 
-     * @param { GameState & UserData} data 
-     */
-    handleGameState(data) {
-        this.dispatchEvent(new CustomEvent('RecivedGameState', { detail: data }));
-
-        // const handlers = this.handlers.RecivedGameState;
-        //   if (handlers) {
-        //     for (let index = 0; index < handlers.length; index++) {
-        //       const handler = handlers[index];
-        //       handler({ state: data });
-        //     }
-        //   }
-    }
-
-    /**
-     * 
-     * @param {Join & UserData} data 
-     */
-    handleJoin(data) {
-        console.debug("recived Join", data);
-
-        if (!this.isPlayerKnown(data.user)) {
-
-            console.debug(`Player ${data.user} joind`)
-            this.send('join', this.userData);
-            this.dispatchEvent(new CustomEvent('AddPlayer', { detail: { player: data.user } }))
-            // const handlers = this.handlers.AddPlayer;
-            // if (handlers) {
-            //   for (let index = 0; index < handlers.length; index++) {
-            //     const handler = handlers[index];
-            //     handler({ player: data.user });
-            //   }
-            // }
-        }
-    }
-
-    /**
-     * 
-     * @param {Join & UserData} data 
-     */
-    handleLeve(data) {
-        console.debug("recived left", data);
-        if (this.isPlayerKnown(data.user)) {
-            this.dispatchEvent(new CustomEvent('RemovePlayer', { detail: { player: data.user } }));
-            // const handlers = this.handlers.RemovePlayer;
-            // if (handlers) {
-            //   for (let index = 0; index < handlers.length; index++) {
-            //     const handler = handlers[index];
-            //     handler({ player: data.user });
-            //   }
-            // }
-            delete this.moves[data.user];
-            this.CheckAllMoved();
-        }
-    }
-
-    /**
-     * 
-     * @param {Move & UserData} data 
-     */
-    handleMove(data) {
-
-        if (!this.moves[data.user] && this.isPlayerKnown(data.user)) {
-            console.debug(`Player ${data.user} moved`)
-
-
-            this.moves[data.user] = data;
-
-            // test if we have all moves including our own
-            this.CheckAllMoved();
-
-
-        }
-    }
-
-    CheckAllMoved() {
-        console.debug("check moves", this.moves);
-        const numberOfPlayers = this.requestPlayerNumber();
-        console.debug("check moves player count", numberOfPlayers);
-        if (Object.keys(this.moves).length == numberOfPlayers) {
-            console.debug('All Moves are present');
-            const moveArray = Object.keys(this.moves).filter(k => this.moves[k]).map(k => ({ ...this.moves[k], player: k }));
-
-            this.dispatchEvent(new CustomEvent('NewTurn', { detail: moveArray }));
-
-            // const handlers = this.handlers.NewTurn;
-            // if (handlers) {
-            //   for (let index = 0; index < handlers.length; index++) {
-            //     const handler = handlers[index];
-            //     const moveArray = Object.keys(this.moves).filter(k => this.moves[k]).map(k => ({ ...this.moves[k]!, player: k }));
-            //     handler({ moves: moveArray });
-            //   }
-            // }
-            this._moves = {};
-        }
-    }
-
-
-
-    /**
-     * 
-     * @param {string} message 
-     * @param {Object} data 
-     */
-    send(message, data) {
-        this.socket.emit(message, { ...this.userData, ...data });
-    }
-
-
-
-
-
-}
+socket.on('update', (serverState) => {
+    viewModel.update(serverState);
+    console.log("[STATE]: ", viewModel.state);
+})
 
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
@@ -444,6 +228,7 @@ const uiMap = document.getElementById("map");
 let uiActors;
 
 async function updateMap() {
+    const map = viewModel.map;
     const mapRoot = uiMap.parentNode;
     uiMap.remove();
 
@@ -451,10 +236,10 @@ async function updateMap() {
     [...uiMap.children].forEach(c => c.remove());
 
     // define position for actor layer
-    const actorLayerPosition = state.map.properties?.actorlayer ?? state.map.layers.length;
+    const actorLayerPosition = map.properties?.actorlayer ?? map.layers.length;
 
     // configure map
-    uiMap.style = `--actor-layer:${actorLayerPosition};--h-tiles:${state.map.width};--v-tiles:${state.map.height};--tileWidth:${state.map.tileWidth}; --tileHeight:${state.map.tileHeight}`
+    uiMap.style = `--actor-layer:${actorLayerPosition};--h-tiles:${map.width};--v-tiles:${map.height};--tileWidth:${map.tileWidth}; --tileHeight:${map.tileHeight}`
 
     // create a layer for all sprites if it will be positioned in next layer
     const actorLayerDiv = document.createElement("div");
@@ -466,12 +251,13 @@ async function updateMap() {
     const animationNames = {}
 
     // for all layers
-    for (let l = 0; l < state.map.layers.length; ++l) {
-        if (state.map.layers[l].visible==false) continue;
-
-        let layer = state.map.layers[l];
+    for (let l = 0; l < map.layers.length; ++l) {
+        let layer = map.layers[l];
         let layerDiv = document.createElement("div");
         layerDiv.classList.add("layer");
+        if (map.layers[l].visible == false) {
+            layerDiv.classList.add("debug");
+        }
         uiMap.appendChild(layerDiv);
 
         let xPos = 0;
@@ -500,7 +286,7 @@ async function updateMap() {
             const [tileSetIndex, tileIndex] = layer.data[i] ?? [undefined, undefined];
             if (tileSetIndex !== undefined && tileIndex !== undefined) {
 
-                const tileSet = state.map.tilesets[tileSetIndex]
+                const tileSet = map.tilesets[tileSetIndex]
                 let tileId = tileIndex;
                 tileDiv.style.setProperty('--tileset-x', tileId % tileSet.tilesPerRow);
                 tileDiv.style.setProperty('--tileset-y', Math.floor(tileId / tileSet.tilesPerRow));
@@ -546,10 +332,10 @@ async function updateMap() {
                 tileDiv.style.left = `${(xPos - 1) * tileSet.tileWidth}px`;
                 tileDiv.style.top = `${(yPos - 1) * tileSet.tileHeight}px`;
             } else {
-                tileDiv.style.width = `${state.map.tileWidth}px`;
-                tileDiv.style.height = `${state.map.tileHeight}px`;
-                tileDiv.style.left = `${(xPos - 1) * state.map.tileWidth}px`;
-                tileDiv.style.top = `${(yPos - 1) * state.map.tileHeight}px`;
+                tileDiv.style.width = `${map.tileWidth}px`;
+                tileDiv.style.height = `${map.tileHeight}px`;
+                tileDiv.style.left = `${(xPos - 1) * map.tileWidth}px`;
+                tileDiv.style.top = `${(yPos - 1) * map.tileHeight}px`;
             }
 
             tileDiv.setAttribute("data-x", xPos);
@@ -563,12 +349,307 @@ async function updateMap() {
 }
 
 
+// TODO: Delete, Its debug...
+window.setTerainBlock = setTerainBlock
+window.makeHole = makeHole
+
+
 /**
- * 
- * @param {'man'|'robot'} type 
+ * Make a holw in the floor
  * @param {number} x 
  * @param {number} y 
- * @param {string|undefined} name 
+ * @returns returns if the map has now a hole in that direction
+ */
+function makeHole(x, y) {
+    if (getMapInfo(x, y) == "hole") {
+        return true;
+    }
+    // The hole has index 1 in data layer
+    const holeIndex = 0
+    const dataTileset = viewModel.map.tilesets.filter(x => x.name == "tileset_data")[0];
+    const dataTilesetIndex = viewModel.map.tilesets.indexOf(dataTileset);
+
+
+
+    setMapImage(x, y, viewModel.map.layers.length - 1, dataTilesetIndex, holeIndex);
+
+    const baseLayer = viewModel.map.layers.filter(x => x.name == "base")[0];
+    const baseLayerIndex = viewModel.map.layers.indexOf(baseLayer);
+
+
+    const holeTileset = viewModel.map.tilesets.filter(x => x.name == "tileset")[0];
+    const holeTilesetIndex = viewModel.map.tilesets.indexOf(holeTileset);
+
+    const holeImageTileIndex = 12;
+    setMapImage(x, y, baseLayerIndex, holeTilesetIndex, holeImageTileIndex);
+
+
+    //  visual layer hole = tileId: 12 tileset name :'tileset'
+
+    // use terains?
+
+
+
+
+    return true;
+
+}
+
+
+
+
+/**
+ * 
+ * @param {number} x the left upper corner of the terain
+ * @param {number} y the left upper corner of the terain
+ * @param {number} width the width to set (minimum 2)
+ * @param {*} height the height to set (minimum 2)
+ * @param {'floor'|'hole1'|'hole2'|'hole3'|'raised'} terain 
+ */
+function setTerainBlock(x, y, width, height, terain) {
+
+    if (width < 2 | height < 2) { // with corner only support we can't set a single tile
+        return false;
+    }
+    const tileset = viewModel.map.tilesets.filter(x => x.name == "tileset")[0];
+    const tilesetIndex = viewModel.map.tilesets.indexOf(tileset);
+    const terrain = tileset.terrains[0];
+    if (!terain) {
+        return false;
+    }
+
+
+
+    const terainNamesToTerainIndex = terrain.colors.reduce((obj, v, i) => {
+        obj[v.name] = i + 1/* one based index*/;
+        return obj;
+    }, {});
+    const terainIndex = terainNamesToTerainIndex[terain];
+    const baseLayer = viewModel.map.layers.filter(x => x.name == "base")[0];
+    const baseLayerIndex = viewModel.map.layers.indexOf(baseLayer);
+
+
+
+
+    // use terrains to handle neigborung tiles
+
+    const directionIndex = {
+        left: 6,
+        right: 2,
+        bottom: 4,
+        top: 0,
+        topleft: 7,
+        topright: 1,
+        bottomleft: 5,
+        bottomright: 3
+    }
+    if (terrain.type != 'corner') {
+        console.error('Currently only corner terrains are implemented');
+    }
+
+    function getWangId(x, y) {
+        const tuple = baseLayer.data[x + y * baseLayer.width];
+        if (!tuple) {
+            return undefined;
+        }
+        const [tilesetIndex, tileIndex] = tuple;
+        const wangTile = viewModel.map.tilesets[tilesetIndex].terrains[0]?.wangtiles.filter(x => x.tileid == tileIndex)[0];
+        return wangTile?.wangid;
+    }
+
+    function arrayEquals(a, b) {
+        return Array.isArray(a) &&
+            Array.isArray(b) &&
+            a.length === b.length &&
+            a.every((val, index) => val === b[index]);
+    }
+
+    const targetTileIds = [];
+
+    // EDGE logik...
+    // for (let yPos = 0; yPos < height; yPos++) {
+    //     for (let xPos = 0; xPos < width; xPos++) {
+
+    //         const searchedWangId = [0, 0, 0, 0, 0, 0, 0, 0]
+
+    //         if (xPos == 0 && x > 0) {
+    //             const wang = getWangId(x + xPos - 1, y + yPos);
+    //             if (wang) {
+    //                 searchedWangId[directionIndex.left] = wang[directionIndex.right];
+    //             } else {
+    //                 searchedWangId[directionIndex.left] = terainIndex;
+    //             }
+    //             searchedWangId[directionIndex.right] = terainIndex;
+    //         }
+    //         else if (xPos == width - 1 && x < baseLayer.width) {
+    //             const wang = getWangId(x + xPos + 1, y + yPos);
+    //             if (wang) {
+    //                 searchedWangId[directionIndex.right] = wang[directionIndex.left];
+    //             } else {
+    //                 searchedWangId[directionIndex.right] = terainIndex;
+    //             }
+    //             searchedWangId[directionIndex.left] = terainIndex;
+    //         } else {
+    //             searchedWangId[directionIndex.left] = terainIndex;
+    //             searchedWangId[directionIndex.right] = terainIndex;
+    //         }
+    //         if (yPos == 0 && y > 0) {
+    //             const wang = getWangId(x + xPos, y + yPos - 1);
+    //             if (wang) {
+    //                 searchedWangId[directionIndex.up] = wang[directionIndex.down];
+    //             } else {
+    //                 searchedWangId[directionIndex.up] = terainIndex;
+    //             }
+    //             searchedWangId[directionIndex.down] = terainIndex;
+    //         }
+    //         else if (yPos == height - 1 && y < baseLayer.height) {
+    //             const wang = getWangId(x + xPos, y + yPos + 1);
+    //             if (wang) {
+    //                 searchedWangId[directionIndex.down] = wang[directionIndex.up];
+    //             } else {
+    //                 searchedWangId[directionIndex.down] = terainIndex;
+    //             }
+    //             searchedWangId[directionIndex.up] = terainIndex;
+    //         } else {
+    //             searchedWangId[directionIndex.up] = terainIndex;
+    //             searchedWangId[directionIndex.down] = terainIndex;
+    //         }
+
+    //         const foundWang = terrain.wangtiles.filter(x => arrayEquals(x.wangid, searchedWangId))[0];
+    //         if (!foundWang) {
+    //             return false;
+    //         }
+
+    //         targetTileIds.push(foundWang.tileid);
+    //     }
+
+    for (let yPos = 0; yPos < height; yPos++) {
+        for (let xPos = 0; xPos < width; xPos++) {
+
+            const searchedWangId = [0, terainIndex, 0, terainIndex, 0, terainIndex, 0, terainIndex]
+
+            if (xPos == 0 && x > 0) {
+                const wang = getWangId(x + xPos - 1, y + yPos);
+                if (wang) {
+                    searchedWangId[directionIndex.topleft] = wang[directionIndex.topright];
+                    searchedWangId[directionIndex.bottomleft] = wang[directionIndex.bottomright];
+                }
+            }
+            else if (xPos == width - 1 && x < baseLayer.width) {
+                const wang = getWangId(x + xPos + 1, y + yPos);
+                if (wang) {
+                    searchedWangId[directionIndex.topright] = wang[directionIndex.topleft];
+                    searchedWangId[directionIndex.bottomright] = wang[directionIndex.bottomleft];
+                }
+            }
+
+            if (yPos == 0 && y > 0) {
+                const wang = getWangId(x + xPos, y + yPos - 1);
+                if (wang) {
+                    searchedWangId[directionIndex.topleft] = wang[directionIndex.bottomleft];
+                    searchedWangId[directionIndex.topright] = wang[directionIndex.bottomright];
+                }
+            }
+            else if (yPos == height - 1 && y < baseLayer.height) {
+                const wang = getWangId(x + xPos, y + yPos + 1);
+                if (wang) {
+                    searchedWangId[directionIndex.bottomleft] = wang[directionIndex.topleft];
+                    searchedWangId[directionIndex.bottomright] = wang[directionIndex.topright];
+                }
+            }
+
+
+            const foundWang = terrain.wangtiles.filter(x => arrayEquals(x.wangid, searchedWangId))[0];
+            if (!foundWang) {
+                return false;
+            }
+
+            targetTileIds.push(foundWang.tileid);
+        }
+    }
+
+
+    // we did not exit so everything should match.
+
+    for (let i = 0; i < targetTileIds.length; i++) {
+        const target = targetTileIds[i];
+        const destinationX = i % width + x;
+        const destinationY = Math.floor(i / width) + y;
+        setMapImage(destinationX, destinationY, baseLayerIndex, tilesetIndex, target);
+    }
+
+    return true;
+
+
+}
+
+
+function setMapImage(x, y, layerIndex, tilesetIndex, tilesetTileIndex) {
+    const layer = viewModel.map.layers[layerIndex];
+    const layerWidth = layer.width;
+    const layerTileIndex = x + y * layerWidth;
+    const tileset = viewModel.map.tilesets[tilesetIndex];
+
+
+
+    // change render
+    const tileId = `layer_${layerIndex}_tile_${layerTileIndex}`;
+    const tileDiv = document.getElementById(tileId);
+    if (tileDiv) { // invisible layers will not be loaded
+        tileDiv.style.setProperty('--tileset-x', tilesetTileIndex % tileset.tilesPerRow);
+        tileDiv.style.setProperty('--tileset-y', Math.floor(tilesetTileIndex / tileset.tilesPerRow));
+        tileDiv.style.backgroundImage = `url(${tileset.imgPath})`;
+    }
+
+    // TODO: should it be changed? Or will this mess with incremental changes
+    //       I use the infos in the map, so it should reflect the correct state
+    // change model
+    viewModel.map.layers[layerIndex].data[layerTileIndex] = [tilesetIndex, tilesetTileIndex];
+
+}
+
+
+/**
+ * 
+ * @param {number} x 
+ * @param {number} y 
+ * @returns 
+ */
+function getMapInfo(x, y) {
+    const dataLayer = viewModel.map.layers[viewModel.map.layers.length - 1];
+    const array = dataLayer.data;
+    const layerWidth = dataLayer.width;
+    const index = x + y * layerWidth;
+    const currentTile = array[index];
+    if (!currentTile) { // 0 is not set tile
+        return 'floor';
+    }
+    const [tilesetIndex, tileIndex] = currentTile;
+    // should only be one tileset in this layer but we check it...
+    if (viewModel.map.tilesets[tilesetIndex].name !== 'data') {
+        console.error('Is this the correct dataset', viewModel.map.tilesets[tilesetIndex].name);
+    }
+
+    switch (tileIndex) {
+        case 0:
+            return 'hole';
+        case 1:
+            return 'move-right';
+
+        default:
+            console.error('Tileindex undefined', tileIndex);
+            return 'floor';
+    }
+
+
+}
+
+/**
+ *
+ * @param {'man'|'robot'} type
+ * @param {number} x
+ * @param {number} y
+ * @param {string|undefined} name
  * @returns {HTMLDivElement} that is the sprite
  */
 function createSprite(type, x, y, name) {
@@ -581,28 +662,17 @@ function createSprite(type, x, y, name) {
     spriteDiv.classList.add('sprite');
     spriteDiv.classList.add(type);
     spriteDiv.classList.add("down");
-    uiActors.appendChild(spriteDiv);
+    viewModel.mapLoading.then(() => uiActors.appendChild(spriteDiv));
     return spriteDiv;
 }
 
 /**
- * 
- * @param {HTMLDivElement} sprite 
- * @param {number} x 
- * @param {number} y 
- */
-function setSpritePosition(sprite, x, y) {
-    sprite.style.setProperty('--x', x);
-    sprite.style.setProperty('--y', y);
-}
-
-/**
- * 
- * @param {HTMLDivElement} sprite 
- * @param {'up'|'down'|'left'|'right'} direction 
+ *
+ * @param {HTMLDivElement} sprite
+ * @param {'up'|'down'|'left'|'right'|'skip'} direction
  */
 function moveSprite(sprite, direction) {
-    console.log(direction)
+
     const x = parseInt(sprite.style.getPropertyValue('--x'));
     const y = parseInt(sprite.style.getPropertyValue('--y'));
 
@@ -611,34 +681,28 @@ function moveSprite(sprite, direction) {
     sprite.classList.remove('right');
     sprite.classList.remove('up');
 
-
-
-    if (direction == 'up') {
-        sprite.style.setProperty('--y', y - 1);
-        sprite.classList.add('up');
-    } else if (direction == 'down') {
-        sprite.style.setProperty('--y', y + 1);
-        sprite.classList.add('down');
+    switch (direction) {
+        case 'up':
+            sprite.style.setProperty('--y', y - 1);
+            sprite.classList.add('up');
+            break;
+        case 'down':
+            sprite.style.setProperty('--y', y + 1);
+            sprite.classList.add('down');
+            break;
+        case 'left':
+            sprite.style.setProperty('--x', x - 1);
+            sprite.classList.add('left');
+            break;
+        case 'right':
+            sprite.classList.add('right');
+            sprite.style.setProperty('--x', x + 1);
+            break;
+        case 'skip':
+            break;
+        default:
+            throw `Unknown direction ${direction}`
     }
-    else if (direction == 'left') {
-        sprite.style.setProperty('--x', x - 1);
-        sprite.classList.add('left');
-    }
-    else if (direction == 'right') {
-        sprite.classList.add('right');
-        sprite.style.setProperty('--x', x + 1);
-    }
-    else {
-        throw `Unknown direction ${direction}`
-    }
-}
-
-function getSpritePosition(sprite) {
-    if (sprite.sprite)
-        return getSpritePosition(sprite.sprite);
-    const x = parseInt(sprite.style.getPropertyValue('--x'));
-    const y = parseInt(sprite.style.getPropertyValue('--y'));
-    return { x, y };
 }
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
@@ -656,79 +720,7 @@ function getSpritePosition(sprite) {
 //#region startup
 
 (async () => {
-
-    const randomName = Math.random().toString();
-
-    const nameRegex = /user=(?<value>[^&]+)/
-    const roomRegex = /room=(?<value>[^&]+)/
-    const name = nameRegex.exec(location.search)?.groups['value'];
-    const room = roomRegex.exec(location.search)?.groups['value'];
-
-    if (!name || !room) {
-        window.location.assign(`/?user=${name ?? randomName}&room=${room ?? 'MyRoom'}`);
-        return;
-    }
-
-
-    const userData = {
-        user: name ?? randomName,
-        room: room ?? 'MyRoom'
-    };
-
-    await state.init();
-
-    state.addPlayer(name);
-
-    communication = new Communication(userData, () => {
-        const result = {
-            positions: {}
-        };
-
-        for (const playerName of Object.keys(state.players)) {
-            const position = getSpritePosition(state.players[playerName]);
-            if (position)
-                result.positions[playerName] =
-                {
-                    position: position
-                }
-        }
-
-
-        return result;
-    }, () => Object.keys(state.players).length,
-        (playerName) => state.players[playerName] !== undefined);
-
-    communication.addEventListener('AddPlayer', e => {
-        state.addPlayer(e.detail.player);
-    });
-
-    communication.addEventListener('RemovePlayer', e => {
-        console.debug('Remove player', e)
-        state.removePlayer(e.detail.player)
-    })
-
-
-    communication.addEventListener('NewTurn', e => {
-        console.debug('Recived New Turn', e)
-        const update = e.detail;
-
-        state.updateState(update)
-
-    })
-
-    communication.addEventListener('RecivedGameState', e => {
-        console.debug('Recived Game State', e)
-        const playerNames = Object.keys(e.detail.positions);
-        for (let index = 0; index < playerNames.length; index++) {
-            const playerName = playerNames[index];
-            const position = e.detail.positions[playerName].position;
-            const player = state.players[playerName] ?? state.addPlayer(playerName);
-            setSpritePosition(player.sprite, position.x, position.y)
-        }
-
-    })
-
-    state.events.push("Hello World");
+    await viewModel.init();
 })();
 
 //#endregion
