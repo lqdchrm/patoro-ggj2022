@@ -15,48 +15,7 @@ import State from "./state.js";
 ////////////////////////////////////////////////////////////////////////////////
 
 
-function add_player_to_player_list(player)
-{
-    var item = document.createElement('li');
-    item.classList.add("move_done");
-    item.textContent = player.name;
-    item.id = player.id;
 
-    var moves_info = document.createElement('span');
-    moves_info.classList.add("pull_right");
-    moves_info.textContent = 0 +" moves left";
-
-    item.appendChild(moves_info);
-    player_list.appendChild(item);
-}
-
-function remove_player_from_player_list(player)
-{
-    var player_list_entry = document.getElementById(player.id);
-    player_list.removeChild(player_list_entry);
-}
-
-function update_moves_ui(player, serverState)
-{
-    var id = player.id;
-    var player_list_entry = document.getElementById(id);
-    var moves_info = player_list_entry.lastChild;
-    let moves_left = player.commands.length - serverState.round;
-    moves_info.textContent = moves_left + " moves left";
-
-}
-
-function update_player_list_ui(state)
-{
-    console.log('doing it');
-    player_list.innerHTML = '';
-    Object.keys(state.players).forEach(player_id => {
-        var player = state.players[player_id];
-        add_player_to_player_list(player);
-        update_moves_ui(player, state);
-    });
-
-}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -114,13 +73,11 @@ let viewModel = new class ViewModel {
         moves.forEach(move => {
             moveSprite(this.players[id].sprite, move);
         })
-        add_player_to_player_list(player);
     }
 
     removePlayer(id) {
         var player = this.players[id];
         if (player) {
-            remove_player_from_player_list(player);
             const localPlayer = player;
             localPlayer.sprite.remove();
             delete this.players[id];
@@ -146,7 +103,36 @@ let viewModel = new class ViewModel {
 
         // store state
         this.state = serverState;
-        update_player_list_ui(this.state);
+
+        // update UI
+        this.updateUi();
+    }
+
+    updateUi() {
+        this.updateUiPlayerList();
+    }
+
+    updateUiPlayerList() {
+        player_list.innerHTML = '';
+        Object.keys(this.state.players).forEach(player_id => {
+            var player = this.state.players[player_id];
+
+            // add to list
+            var item = document.createElement('li');
+            item.classList.add("move_done");
+            item.textContent = player.name;
+            item.id = player.id;
+
+            // write moves
+            var moves_info = document.createElement('span');
+            moves_info.classList.add("pull_right");
+            let moves_left = player.commands.length - this.state.round;
+            moves_info.textContent = moves_left + " moves left";
+            item.appendChild(moves_info);
+
+            // append to dom
+            player_list.appendChild(item);
+        });
     }
 };
 

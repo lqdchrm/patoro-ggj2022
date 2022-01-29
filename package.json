@@ -11,7 +11,7 @@
   "main": "./src/server.js",
   "scripts": {
     "clean": "shx rm -rf ./_dist",
-    "dev": "nodemon --inspect --watch ./src/server.js ./src/server.js",
+    "dev": "nodemon --inspect --watch ./src/server.js --watch ./src/client/state.js ./src/server.js",
     "build": "npm run clean && shx mkdir -p ./_dist && shx cp -r ./src/* ./_dist",
     "start": "pm2 start ./src/server.js",
     "stop": "pm2 stop ./src/server.js",
