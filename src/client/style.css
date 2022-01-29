@@ -181,6 +181,28 @@ body>* {
     color: #fff;
 }
 
+#player_list_div {
+    margin-left:100px;
+    border: white solid 1px;
+    padding: 5px;
+    width: 20%;
+}
+#player_list {
+    list-style: none;
+}
+
+.move_done {
+    color: green;
+}
+
+.waiting {
+    color: red;
+}
+
+.pull_right {
+    float: right;
+}
+
 /*******************************************************************************
 ██████╗ ███████╗██████╗ ██╗   ██╗ ██████╗
 ██╔══██╗██╔════╝██╔══██╗██║   ██║██╔════╝
