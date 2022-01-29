@@ -11,8 +11,13 @@
  * if it is not the default size.
  */
 
-.sprite.robot {
+ .sprite.robot {
     background-image: url("robot.png");
+    --frames: 3;
+}
+
+.sprite.cursor {
+    background-image: url("cursor.png");
     --frames: 3;
 }
 

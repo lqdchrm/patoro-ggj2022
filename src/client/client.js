@@ -112,7 +112,35 @@ let viewModel = new class ViewModel {
     move(command) {
         if (this.commandBuffer.length < 5) {
             this.commandBuffer.push(command);
+            this.updateMarker();
         }
+    }
+
+    updateMarker() {
+        const currentPlayer = this.players[socket.id];
+        if (!this.marker) {
+            this.marker = createSprite("cursor", currentPlayer, currentPlayer.x, currentPlayer.y);
+        }
+        const vector = { x: currentPlayer.x, y: currentPlayer.y };
+        for (const c of this.commandBuffer) {
+            switch (c) {
+                case 'left':
+                    vector.x -= 1;
+                    break;
+                case 'right':
+                    vector.x += 1;
+                    break;
+                case 'up':
+                    vector.y -= 1;
+                    break;
+                case 'down':
+                    vector.y += 1;
+                    break;
+                default:
+                    break;
+            }
+        }
+        setSpritePos(this.marker, vector)
     }
 
     calcSpawnPoint(id) {
@@ -473,12 +501,6 @@ async function updateMap() {
     uiActors = actorLayerDiv;
 
     const animationNames = {}
-
-    const markerDiv = document.createElement("div");
-    markerDiv.classList.add("marker");
-
-
-    uiMap.appendChild(markerDiv);
 
     // for all layers
     for (let l = 0; l < map.layers.length; ++l) {
@@ -966,7 +988,7 @@ function getDataLayerInfo(x, y) {
 
 /**
  *
- * @param {'man'|'robot'} type
+ * @param {'man'|'robot'|'cursor'} type
  * @param {number} x
  * @param {number} y
  * @param {string|undefined} name
