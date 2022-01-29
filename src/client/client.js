@@ -30,7 +30,7 @@ class PlayerViewModel {
     constructor(id, spawnPoint) {
         this.id = id;
         this.falling_counter = 0;
-        this.laser_loading   = 0;
+        this.laser_loading = 0;
         this.spawnPoint = spawnPoint;
 
         this.sprite = createSprite('robot', this.spawnPoint.x, this.spawnPoint.y, id, id === socket.id);
@@ -113,8 +113,7 @@ let viewModel = new class ViewModel {
     }
     */
     fire_laser() {
-        if (this.commandBuffer.length < 3)
-        {
+        if (this.commandBuffer.length < 3) {
             this.commandBuffer.push('fire_laser');
             this.commandBuffer.push('fire_laser');
             this.commandBuffer.push('fire_laser');
@@ -172,6 +171,9 @@ let viewModel = new class ViewModel {
 
 
             switch (move) {
+                default:
+                    console.warn(`Unknown command`, move);
+                    return getDirectionsFromCommands(index - 1);
                 case 'skip':
                 case 'hole':
                 case 'fill':
@@ -213,8 +215,6 @@ let viewModel = new class ViewModel {
                     }
 
                     break;
-                default:
-                    throw new Error("Unknown move");
             }
 
 
@@ -392,8 +392,7 @@ let viewModel = new class ViewModel {
                 break;
             case 'fire_laser':
                 local_player.laser_loading += 1;
-                if (local_player.laser_loading == 3)
-                {
+                if (local_player.laser_loading == 3) {
                     local_player.laser_loading = 0;
                     var fireball = createSprite("fireball", local_player.x, local_player.y);
                     setSpriteVisibility(fireball, true);
