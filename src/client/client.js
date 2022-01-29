@@ -84,6 +84,22 @@ let viewModel = new class ViewModel {
         }
     }
 
+    handleMove(player, move) {
+        switch(move) {
+            case 'left':
+            case 'right':
+            case 'up':
+            case 'down':
+                moveSprite(this.players[player.id].sprite, move);
+                break;
+            case'hole':
+                console.log("HOLE");
+                break;
+            default:
+                throw new Error("Unknown move");
+        }
+    }
+
     update(serverState) {
         // add new players
         let addedPlayers = Object.keys(serverState.players).filter(id => !this.state.players[id]).sort();
@@ -96,9 +112,7 @@ let viewModel = new class ViewModel {
         // update moves
         Object.values(serverState.players).forEach(player => {
             let moves = player.commands.slice(this.state.round, serverState.round);
-            moves.forEach(move => {
-                moveSprite(this.players[player.id].sprite, move);
-            });
+            moves.forEach(move => this.handleMove(player, move));
         });
 
         // store state
@@ -160,7 +174,6 @@ var name_change_input = document.getElementById('name_change_input');
 var uiMessages      = document.getElementById('messages');
 var uiUserId        = document.getElementById('userId');
 var uiRound         = document.getElementById('round');
-var player_list_div = document.getElementById('player_list_div');
 var player_list     = document.getElementById('player_list');
 
 // chat input box
@@ -465,7 +478,7 @@ function makeHole(x, y) {
  * @param {number} y the left upper corner of the terain
  * @param {number} width the width to set (minimum 2)
  * @param {*} height the height to set (minimum 2)
- * @param {'floor'|'hole1'|'hole2'|'hole3'|'raised'} terrainName 
+ * @param {'floor'|'hole1'|'hole2'|'hole3'|'raised'} terrainName
  */
 function setTerainBlock(x, y, width, height, terrainName) {
 
@@ -629,7 +642,7 @@ function setTerainBlock(x, y, width, height, terrainName) {
         }).reduce((o, n) => o + n, 0);
 
         /**
-         * @type {Datatypes} 
+         * @type {Datatypes}
          * */
         let newDataState = 'none';
 
@@ -647,10 +660,10 @@ function setTerainBlock(x, y, width, height, terrainName) {
 }
 
 /**
- * 
- * @param {number} x 
- * @param {number} y 
- * @param {Datatypes} value 
+ *
+ * @param {number} x
+ * @param {number} y
+ * @param {Datatypes} value
  */
 function setDataLayer(x, y, value) {
 
@@ -692,12 +705,12 @@ function setDataLayer(x, y, value) {
 }
 
 /**
- * 
- * @param {number} x 
- * @param {number} y 
- * @param {number|'data'|'deco'|'base'} layerIndex 
- * @param {number |'tileset'|'tileset_data'|'tileset_top'|undefined} tilesetIndex 
- * @param {number} tilesetTileIndex 
+ *
+ * @param {number} x
+ * @param {number} y
+ * @param {number|'data'|'deco'|'base'} layerIndex
+ * @param {number |'tileset'|'tileset_data'|'tileset_top'|undefined} tilesetIndex
+ * @param {number} tilesetTileIndex
  */
 function setMapImage(x, y, layerIndex, tilesetIndex, tilesetTileIndex) {
     if (typeof layerIndex == "string") {
