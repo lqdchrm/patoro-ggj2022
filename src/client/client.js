@@ -95,9 +95,10 @@ let viewModel = new class ViewModel {
     async init() {
         this.map = await loadMap("killzone", "./maps/killzone");
         await updateMap();
-        this.startTimer();
+        //this.startTimer();
     }
 
+    /*
     startTimer() {
         let running = this.timer != null;
         if (!running) {
@@ -121,6 +122,7 @@ let viewModel = new class ViewModel {
             }, 1000);
         }
     }
+    */
 
     undo() {
         if (this.commandBuffer.length) {
@@ -129,8 +131,11 @@ let viewModel = new class ViewModel {
     }
 
     move(command) {
-        if (this.commandBuffer.length < 5) {
-            this.commandBuffer.push(command);
+        this.commandBuffer.push(command);
+        if (this.commandBuffer.length == 5)
+        {
+            socket.emit("command", this.commandBuffer);
+            this.commandBuffer.splice(0, this.commandBuffer.length);
         }
     }
 
@@ -266,7 +271,7 @@ let viewModel = new class ViewModel {
         // update UI
         this.updateUi();
 
-        this.startTimer();
+        //this.startTimer();
     }
 
     uiAction(cmd) {
