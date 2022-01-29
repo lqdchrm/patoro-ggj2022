@@ -29,23 +29,20 @@ function add_player_to_player_list(player)
 
     item.appendChild(moves_info);
     uiPlayerList.appendChild(item);
-
-    update_moves_ui(player)
 }
 
-function remove_player_from_player_list(player)
+function remove_player_from_player_list(id)
 {
-    var id = player.id
     var player_list_entry = document.getElementById(id);
     uiPlayerList.removeChild(player_list_entry);
 }
 
-function update_moves_ui(player)
+function update_moves_ui(player, serverState)
 {
     var id = player.id;
     var player_list_entry = document.getElementById(id);
     var moves_info = player_list_entry.lastChild;
-    let moves_left = player.commands.length - viewModel.state.round - 1;
+    let moves_left = player.commands.length - serverState.round;
     moves_info.textContent = moves_left + " moves left";
 
 }
@@ -103,7 +100,7 @@ let viewModel = new class ViewModel {
         removedPlayers.forEach(id => {
             var player = this.players[id];
             if (player) {
-                //remove_player_from_player_list(player);
+                remove_player_from_player_list(id);
                 const localPlayer = player;
                 localPlayer.sprite.remove();
                 delete this.players[id];
@@ -116,7 +113,7 @@ let viewModel = new class ViewModel {
             moves.forEach(move => {
                 moveSprite(this.players[player.id].sprite, move);
             });
-            update_moves_ui(player);
+            update_moves_ui(player, serverState);
         });
 
         // store state
