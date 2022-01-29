@@ -31,15 +31,24 @@ class PlayerViewModel {
         this.id = id;
         this.falling_counter = 0;
         this.spawnPoint = spawnPoint;
+
         this.sprite = createSprite('robot', this.spawnPoint.x, this.spawnPoint.y, id, id === socket.id);
+        this.renderPromise = Promise.resolve();
+
+        this._x = this.spawnPoint.x;
+        this._y = this.spawnPoint.y;
     }
 
     get x() {
-        return +this.sprite.style.getPropertyValue('--x');
+        if (!this._x == +this.sprite.style.getPropertyValue('--x'))
+            throw new Error("Pos mismatch");
+        return this._x;
     }
 
     get y() {
-        return +this.sprite.style.getPropertyValue('--y');
+        if (!this._y == +this.sprite.style.getPropertyValue('--y'))
+            throw new Error("Pos mismatch");
+        return this._y;
     }
 
     get direction() {
@@ -56,7 +65,9 @@ class PlayerViewModel {
         x += movement.x;
         y += movement.y;
         if (x >= 0 && x < map.width && y >= 0 && y < map.height) {
-            setSpritePos(this.sprite, { x: x, y: y }, move ?? this.direction);
+            this._x = x;
+            this._y = y;
+            setSpritePos(this.sprite, { x: x, y: y }, move ?? 'skip');
         }
     }
 }
@@ -88,19 +99,27 @@ let viewModel = new class ViewModel {
     }
 
     startTimer() {
-        this.timerValue = 10;
-        this.timer = setInterval(() => {
-            this.timerValue -= 1;
-            if (this.timerValue <= 0) {
-                if (this.commandBuffer.length < 5) {
-                    let cmds = Array(5 - this.commandBuffer.length).fill('skip');
-                    cmds.forEach(cmd => this.move(cmd));
+        let running = this.timer != null;
+        if (!running) {
+            this.timerValue = 10;
+            this.timer = setInterval(() => {
+                this.timerValue -= 1;
+                if (this.timerValue <= 0) {
+                    if (this.commandBuffer.length < 5) {
+                        let cmds = Array(5 - this.commandBuffer.length).fill('skip');
+                        cmds.forEach(cmd => this.move(cmd));
+                    }
+                    socket.emit("command", this.commandBuffer);
+                    this.commandBuffer.splice(0, this.commandBuffer.length);
+                    if (running) {
+                        this.startTimer();
+                    } else {
+                        clearInterval(this.timer);
+                        this.timer = null;
+                    }
                 }
-                this.timerValue = 10;
-                socket.emit("command", this.commandBuffer);
-                this.commandBuffer.splice(0, this.commandBuffer.length);
-            }
-        }, 1000);
+            }, 1000);
+        }
     }
 
     undo() {
@@ -207,38 +226,47 @@ let viewModel = new class ViewModel {
         let addedPlayers = Object.keys(serverState.players).filter(id => !this.state.players[id]).sort();
         addedPlayers.forEach(id => this.addNewPlayer(id, serverState));
 
-        // remove old players
-        let removedPlayers = Object.keys(this.state.players).filter(id => !serverState.players[id]).sort();
-        removedPlayers.forEach(id => this.removePlayer(id));
-
-        // update moves
-        let allPlayers = Object.keys(serverState.players).sort().map(id => serverState.players[id]);
-
-        let start = new Promise((res) => { res(0); });
-
-        for(let round = this.state.round; round < serverState.round; ++round) {
-            start = start.then((step) => {
-                return new Promise((res, rej) => {
-                    try {
-                        allPlayers.forEach(player => {
-                            let move = player.commands[round];
-                            this.handleMove(viewModel.map, player, move);
-                        });
-                        setTimeout(() => res(step + 1), 500);
-                    } catch (err) {
-                        rej(err);
-                    }
+        if (this.state.round) {
+            addedPlayers.forEach(id => {
+                let player = serverState.players[id];
+                let moves = player.commands.slice(0, this.state.round);
+                moves.forEach(move => {
+                    // if (move !== 'skip')
+                    //     throw new Error("Invalid state in new player");
+                    this.players[id].move(move, viewModel.map);
                 });
             });
         }
 
-        start.then(() => {
-            // store state
-            this.state = serverState;
+        // remove old players
+        // let removedPlayers = Object.keys(this.state.players).filter(id => !serverState.players[id]).sort();
+        // removedPlayers.forEach(id => this.removePlayer(id));
 
-            // update UI
-            this.updateUi();
-        });
+        // update moves
+        let allPlayers = Object.keys(serverState.players).sort().map(id => serverState.players[id]);
+
+        for(let round = this.state.round; round < serverState.round; ++round) {
+            allPlayers.forEach(player => {
+                let move = round < player.commands.length ? player.commands[round] : null;
+                if (move) {
+                    this.handleMove(viewModel.map, player, move);
+                }
+
+                if (player.diedInRound !== null) {
+                    this.players[player.id].sprite.classList.add("dead");
+                }
+            });
+        }
+
+        // store state
+        this.state = serverState;
+
+        this.state.players
+
+        // update UI
+        this.updateUi();
+
+        this.startTimer();
     }
 
     uiAction(cmd) {

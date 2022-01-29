@@ -77,6 +77,10 @@
     filter: hue-rotate(186deg) saturate(5.5);
 }
 
+.sprite.dead {
+    opacity: 0.3;
+}
+
 @keyframes sprite {
     from {
         background-position-x: 0px;
