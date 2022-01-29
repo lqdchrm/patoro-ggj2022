@@ -16,6 +16,13 @@
     --frames: 3;
 }
 
+.sprite.fireball {
+    background-image: url("fireball.png");
+    --sprite-width: 32px;
+    --sprite-height: 32px;
+    --frames: 1;
+}
+
 .sprite.cursor {
     background-image: url("cursor.png");
     --frames: 3;

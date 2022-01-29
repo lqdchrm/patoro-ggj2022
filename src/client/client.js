@@ -30,6 +30,7 @@ class PlayerViewModel {
     constructor(id, spawnPoint) {
         this.id = id;
         this.falling_counter = 0;
+        this.laser_loading   = 0;
         this.spawnPoint = spawnPoint;
 
         this.sprite = createSprite('robot', this.spawnPoint.x, this.spawnPoint.y, id, id === socket.id);
@@ -82,6 +83,7 @@ let viewModel = new class ViewModel {
     async init() {
         this.map = await loadMap("killzone", "./maps/killzone");
         await updateMap();
+
         //this.startTimer();
     }
 
@@ -110,11 +112,28 @@ let viewModel = new class ViewModel {
         }
     }
     */
+    fire_laser() {
+        if (this.commandBuffer.length < 3)
+        {
+            this.commandBuffer.push('fire_laser');
+            this.commandBuffer.push('fire_laser');
+            this.commandBuffer.push('fire_laser');
+        }
+    }
 
     undo() {
         if (this.commandBuffer.length) {
             this.commandBuffer.splice(this.commandBuffer.length - 1, 1);
         }
+    }
+
+    commit() {
+        while (this.commandBuffer.length < 5) {
+            this.commandBuffer.push('skip');
+        }
+        socket.emit("command", this.commandBuffer);
+        this.commandBuffer.splice(0, this.commandBuffer.length);
+        this.updateMarker();
     }
 
     move(command) {
@@ -269,6 +288,7 @@ let viewModel = new class ViewModel {
                         sprite.classList.add('left');
                         break;
                 }
+                break;
             case 'hole':
             case 'fill':
                 console.log("HOLE");
@@ -306,6 +326,15 @@ let viewModel = new class ViewModel {
                         setTerainBlock(...param, 'floor');
                     else
                         setTerainBlock(...param, 'hole2');
+                }
+                break;
+            case 'fire_laser':
+                local_player.laser_loading += 1;
+                if (local_player.laser_loading == 3)
+                {
+                    local_player.laser_loading = 0;
+                    var fireball = createSprite("fireball", local_player.x, local_player.y);
+                    setSpriteVisibility(fireball, true);
                 }
                 break;
             case 'skip':
@@ -372,6 +401,8 @@ let viewModel = new class ViewModel {
     uiAction(cmd) {
         switch (cmd) {
             case 'undo': this.undo(); break;
+            case 'commit': this.commit(); break;
+            case 'fire_laser': this.fire_laser(); break;
             default: throw new Error("Unknown uiAction");
         }
     }
@@ -1091,16 +1122,18 @@ function getDataLayerInfo(x, y) {
  * @param {boolean} isMe
  * @returns {HTMLDivElement} that is the sprite
  */
-function createSprite(type, x, y, name, isMe) {
+function createSprite(type, x, y, name, isMe, direction) {
     const spriteDiv = document.createElement("div");
     spriteDiv.style.setProperty('--x', x);
     spriteDiv.style.setProperty('--y', y);
+    //spriteDiv.style.setProperty('--sprite-width', width);
+    //spriteDiv.style.setProperty('--sprite-height', height);
     if (name) {
         spriteDiv.style.setProperty('--name', `'${name}'`);
     }
     spriteDiv.classList.add('sprite');
     spriteDiv.classList.add(type);
-    spriteDiv.classList.add("down");
+    spriteDiv.classList.add(direction);
     if (isMe) {
         spriteDiv.classList.add("me");
     }
