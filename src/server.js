@@ -61,7 +61,7 @@ io.on('connection', (socket) => {
 
     // handle name change
     socket.on('name change message', (msg) => {
-        let state = State.applyCommand({id: socket.id, cmd});
+        let state = State.renamePlayer({id: socket.id, name: msg});
         io.emit('update', state);
     });
 

@@ -15,25 +15,25 @@ import State from "./state.js";
 ////////////////////////////////////////////////////////////////////////////////
 
 
-function add_player_to_player_list(id, name)
+function add_player_to_player_list(player)
 {
     var item = document.createElement('li');
     item.classList.add("move_done");
-    item.textContent = name;
-    item.id = id;
+    item.textContent = player.name;
+    item.id = player.id;
 
     var moves_info = document.createElement('span');
     moves_info.classList.add("pull_right");
     moves_info.textContent = 0 +" moves left";
 
     item.appendChild(moves_info);
-    uiPlayerList.appendChild(item);
+    player_list.appendChild(item);
 }
 
-function remove_player_from_player_list(id)
+function remove_player_from_player_list(player)
 {
-    var player_list_entry = document.getElementById(id);
-    uiPlayerList.removeChild(player_list_entry);
+    var player_list_entry = document.getElementById(player.id);
+    player_list.removeChild(player_list_entry);
 }
 
 function update_moves_ui(player, serverState)
@@ -45,6 +45,19 @@ function update_moves_ui(player, serverState)
     moves_info.textContent = moves_left + " moves left";
 
 }
+
+function update_player_list_ui(state)
+{
+    console.log('doing it');
+    player_list.innerHTML = '';
+    Object.keys(state.players).forEach(player_id => {
+        var player = state.players[player_id];
+        add_player_to_player_list(player);
+        update_moves_ui(player, state);
+    });
+
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // ██╗   ██╗██╗███████╗██╗    ██╗███╗   ███╗ ██████╗ ██████╗ ███████╗██╗
@@ -85,6 +98,7 @@ let viewModel = new class ViewModel {
         addedPlayers.forEach(id => {
             let spawnPoint =  {x: 3, y: 3};
             this.players[id] = {
+                id,
                 sprite: createSprite('robot', spawnPoint.x, spawnPoint.y, id),
             }
             let player = serverState.players[id];
@@ -92,7 +106,6 @@ let viewModel = new class ViewModel {
             moves.forEach(move => {
                 moveSprite(this.players[id].sprite, move);
             })
-            add_player_to_player_list(id, player.name);
         });
 
         // remove old players
@@ -100,7 +113,7 @@ let viewModel = new class ViewModel {
         removedPlayers.forEach(id => {
             var player = this.players[id];
             if (player) {
-                remove_player_from_player_list(id);
+                remove_player_from_player_list(player);
                 const localPlayer = player;
                 localPlayer.sprite.remove();
                 delete this.players[id];
@@ -113,11 +126,11 @@ let viewModel = new class ViewModel {
             moves.forEach(move => {
                 moveSprite(this.players[player.id].sprite, move);
             });
-            update_moves_ui(player, serverState);
         });
 
         // store state
         this.state = serverState;
+        update_player_list_ui(this.state);
     }
 };
 
@@ -137,14 +150,16 @@ let viewModel = new class ViewModel {
 //  ╚═════╝ ╚═╝    ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝
 //#region UI Handlers
 
-var form       = document.getElementById('form');
-var input      = document.getElementById('input');
-var name_input = document.getElementById('name_input');
+var form              = document.getElementById('form');
+var input             = document.getElementById('input');
+var name_change_form  = document.getElementById('name_change_form');
+var name_change_input = document.getElementById('name_change_input');
 
-var uiMessages   = document.getElementById('messages');
-var uiUserId     = document.getElementById('userId');
-var uiRound      = document.getElementById('round');
-var uiPlayerList = document.getElementById('player_list');
+var uiMessages      = document.getElementById('messages');
+var uiUserId        = document.getElementById('userId');
+var uiRound         = document.getElementById('round');
+var player_list_div = document.getElementById('player_list_div');
+var player_list     = document.getElementById('player_list');
 
 // chat input box
 form.addEventListener('submit', function (e) {
@@ -156,10 +171,10 @@ form.addEventListener('submit', function (e) {
 });
 
 // chat input box
-form.addEventListener('submit', function (e) {
+name_change_form.addEventListener('submit', function (e) {
     e.preventDefault();
-    if (input.value) {
-        socket.emit('name change message', input.value);
+    if (name_change_input.value) {
+        socket.emit('name change message', name_change_input.value);
         input.value = '';
     }
 });
@@ -249,6 +264,7 @@ socket.on('chat message', function ({ from, msg }) {
 });
 
 socket.on('update', (serverState) => {
+    console.log("[SERVER STATE]: ", serverState);
     viewModel.update(serverState);
     console.log("[STATE]: ", viewModel.state);
 })

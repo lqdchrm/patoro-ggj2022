@@ -25,6 +25,11 @@ export function removePlayer(id) {
     return updateRound();
 }
 
+export function renamePlayer({id, name}) {
+    state.players[id].name = name;
+    return state;
+}
+
 export function applyCommand({id, cmd}) {
     if (!state.players[id]) {
         addPlayer({id, name: "Unknown"});
@@ -44,4 +49,5 @@ export default {
     addPlayer,
     removePlayer,
     applyCommand,
+    renamePlayer,
 }
