@@ -15,6 +15,35 @@ import State from "./state.js";
 ////////////////////////////////////////////////////////////////////////////////
 
 
+function add_player_to_player_list(id)
+{
+    var item = document.createElement('li');
+    item.classList.add("move_done");
+    item.textContent = id;
+    item.id = id;
+
+    var moves_info = document.createElement('span');
+    moves_info.classList.add("pull_right");
+    moves_info.textContent = 0 +" moves left";
+
+    item.appendChild(moves_info);
+    uiPlayerList.appendChild(item);
+}
+
+function remove_player_from_player_list(id)
+{
+    var player_list_entry = document.getElementById(id);
+    uiPlayerList.removeChild(player_list_entry);
+}
+
+function update_moves_ui(id, number_of_moves_stored)
+{
+    var player_list_entry = document.getElementById(id);
+    var moves_info = player_list_entry.lastChild;
+    moves_info.textContent = number_of_moves_stored + " moves left";
+
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // ██╗   ██╗██╗███████╗██╗    ██╗███╗   ███╗ ██████╗ ██████╗ ███████╗██╗
 // ██║   ██║██║██╔════╝██║    ██║████╗ ████║██╔═══██╗██╔══██╗██╔════╝██║
@@ -60,11 +89,7 @@ let viewModel = new class ViewModel {
             moves.forEach(move => {
                 moveSprite(this.players[id].sprite, move);
             })
-            var item = document.createElement('li');
-            item.classList.add("move_done");
-            item.textContent = id;
-            uiPlayerList.appendChild(item);
-  
+            add_player_to_player_list(id);
         });
 
         // remove old players
@@ -74,6 +99,7 @@ let viewModel = new class ViewModel {
                 const localPlayer = this.players[id];
                 localPlayer.sprite.remove();
                 delete this.players[id];
+                remove_player_from_player_list(id);
             }
         });
 
@@ -83,6 +109,7 @@ let viewModel = new class ViewModel {
             moves.forEach(move => {
                 moveSprite(this.players[player.id].sprite, move);
             });
+            update_moves_ui(player.id, moves.length);
         });
 
         // store state
