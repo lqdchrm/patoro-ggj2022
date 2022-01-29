@@ -15,8 +15,9 @@ import State from "./state.js";
 ////////////////////////////////////////////////////////////////////////////////
 
 
-function add_player_to_player_list(id)
+function add_player_to_player_list(player)
 {
+    var id = player.id
     var item = document.createElement('li');
     item.classList.add("move_done");
     item.textContent = id;
@@ -28,19 +29,24 @@ function add_player_to_player_list(id)
 
     item.appendChild(moves_info);
     uiPlayerList.appendChild(item);
+
+    update_moves_ui(player)
 }
 
-function remove_player_from_player_list(id)
+function remove_player_from_player_list(player)
 {
+    var id = player.id
     var player_list_entry = document.getElementById(id);
     uiPlayerList.removeChild(player_list_entry);
 }
 
-function update_moves_ui(id, number_of_moves_stored)
+function update_moves_ui(player)
 {
+    var id = player.id;
     var player_list_entry = document.getElementById(id);
     var moves_info = player_list_entry.lastChild;
-    moves_info.textContent = number_of_moves_stored + " moves left";
+    let moves_left = player.commands.length - viewModel.state.round - 1;
+    moves_info.textContent = moves_left + " moves left";
 
 }
 
@@ -79,27 +85,29 @@ let viewModel = new class ViewModel {
 
     update(serverState) {
         // add new players
-        let addedPlayers = Object.keys(serverState.players).filter(id => !this.state.players[id]);
+        let addedPlayers = Object.keys(serverState.players).filter(id => !this.state.players[id]).sort();
         addedPlayers.forEach(id => {
+            let spawnPoint =  {x: 3, y: 3};
             this.players[id] = {
-                sprite: createSprite('robot', 3, 3, id)
+                sprite: createSprite('robot', spawnPoint.x, spawnPoint.y, id),
             }
             let player = serverState.players[id];
             let moves = player.commands.slice(0, this.state.round);
             moves.forEach(move => {
                 moveSprite(this.players[id].sprite, move);
             })
-            add_player_to_player_list(id);
+            add_player_to_player_list(player);
         });
 
         // remove old players
-        let removedPlayers = Object.keys(this.state.players).filter(id => !serverState.players[id]);
+        let removedPlayers = Object.keys(this.state.players).filter(id => !serverState.players[id]).sort();
         removedPlayers.forEach(id => {
-            if (this.players[id]) {
-                const localPlayer = this.players[id];
+            var player = this.players[id];
+            if (player) {
+                //remove_player_from_player_list(player);
+                const localPlayer = player;
                 localPlayer.sprite.remove();
                 delete this.players[id];
-                remove_player_from_player_list(id);
             }
         });
 
@@ -109,7 +117,7 @@ let viewModel = new class ViewModel {
             moves.forEach(move => {
                 moveSprite(this.players[player.id].sprite, move);
             });
-            update_moves_ui(player.id, moves.length);
+            update_moves_ui(player);
         });
 
         // store state
@@ -267,7 +275,7 @@ async function updateMap() {
     [...uiMap.children].forEach(c => c.remove());
 
     // define position for actor layer
-    const actorLayerPosition = map.properties?.actorlayer ?? map.layers.length;
+    const actorLayerPosition = map.properties?.actorlayer?.value ?? map.layers.length;
 
     // configure map
     uiMap.style = `--actor-layer:${actorLayerPosition};--h-tiles:${map.width};--v-tiles:${map.height};--tileWidth:${map.tileWidth}; --tileHeight:${map.tileHeight}`
@@ -387,20 +395,18 @@ window.makeHole = makeHole
 
 /**
  * Make a holw in the floor
- * @param {number} x 
- * @param {number} y 
+ * @param {number} x
+ * @param {number} y
  * @returns returns if the map has now a hole in that direction
  */
 function makeHole(x, y) {
-    if (getMapInfo(x, y) == "hole") {
+    if (getDataLayerInfo(x, y) == "hole") {
         return true;
     }
     // The hole has index 1 in data layer
     const holeIndex = 0
     const dataTileset = viewModel.map.tilesets.filter(x => x.name == "tileset_data")[0];
     const dataTilesetIndex = viewModel.map.tilesets.indexOf(dataTileset);
-
-
 
     setMapImage(x, y, viewModel.map.layers.length - 1, dataTilesetIndex, holeIndex);
 
@@ -430,12 +436,12 @@ function makeHole(x, y) {
 
 
 /**
- * 
+ *
  * @param {number} x the left upper corner of the terain
  * @param {number} y the left upper corner of the terain
  * @param {number} width the width to set (minimum 2)
  * @param {*} height the height to set (minimum 2)
- * @param {'floor'|'hole1'|'hole2'|'hole3'|'raised'} terain 
+ * @param {'floor'|'hole1'|'hole2'|'hole3'|'raised'} terain
  */
 function setTerainBlock(x, y, width, height, terain) {
 
@@ -497,63 +503,6 @@ function setTerainBlock(x, y, width, height, terain) {
 
     const targetTileIds = [];
 
-    // EDGE logik...
-    // for (let yPos = 0; yPos < height; yPos++) {
-    //     for (let xPos = 0; xPos < width; xPos++) {
-
-    //         const searchedWangId = [0, 0, 0, 0, 0, 0, 0, 0]
-
-    //         if (xPos == 0 && x > 0) {
-    //             const wang = getWangId(x + xPos - 1, y + yPos);
-    //             if (wang) {
-    //                 searchedWangId[directionIndex.left] = wang[directionIndex.right];
-    //             } else {
-    //                 searchedWangId[directionIndex.left] = terainIndex;
-    //             }
-    //             searchedWangId[directionIndex.right] = terainIndex;
-    //         }
-    //         else if (xPos == width - 1 && x < baseLayer.width) {
-    //             const wang = getWangId(x + xPos + 1, y + yPos);
-    //             if (wang) {
-    //                 searchedWangId[directionIndex.right] = wang[directionIndex.left];
-    //             } else {
-    //                 searchedWangId[directionIndex.right] = terainIndex;
-    //             }
-    //             searchedWangId[directionIndex.left] = terainIndex;
-    //         } else {
-    //             searchedWangId[directionIndex.left] = terainIndex;
-    //             searchedWangId[directionIndex.right] = terainIndex;
-    //         }
-    //         if (yPos == 0 && y > 0) {
-    //             const wang = getWangId(x + xPos, y + yPos - 1);
-    //             if (wang) {
-    //                 searchedWangId[directionIndex.up] = wang[directionIndex.down];
-    //             } else {
-    //                 searchedWangId[directionIndex.up] = terainIndex;
-    //             }
-    //             searchedWangId[directionIndex.down] = terainIndex;
-    //         }
-    //         else if (yPos == height - 1 && y < baseLayer.height) {
-    //             const wang = getWangId(x + xPos, y + yPos + 1);
-    //             if (wang) {
-    //                 searchedWangId[directionIndex.down] = wang[directionIndex.up];
-    //             } else {
-    //                 searchedWangId[directionIndex.down] = terainIndex;
-    //             }
-    //             searchedWangId[directionIndex.up] = terainIndex;
-    //         } else {
-    //             searchedWangId[directionIndex.up] = terainIndex;
-    //             searchedWangId[directionIndex.down] = terainIndex;
-    //         }
-
-    //         const foundWang = terrain.wangtiles.filter(x => arrayEquals(x.wangid, searchedWangId))[0];
-    //         if (!foundWang) {
-    //             return false;
-    //         }
-
-    //         targetTileIds.push(foundWang.tileid);
-    //     }
-
     for (let yPos = 0; yPos < height; yPos++) {
         for (let xPos = 0; xPos < width; xPos++) {
 
@@ -592,6 +541,7 @@ function setTerainBlock(x, y, width, height, terain) {
 
             const foundWang = terrain.wangtiles.filter(x => arrayEquals(x.wangid, searchedWangId))[0];
             if (!foundWang) {
+                console.log(`Faild to find wang tile at (${x + xPos},${y + yPos})`, Object.keys(terainNamesToTerainIndex).map(k => ({ name: k, value: terainNamesToTerainIndex[k] })).filter(x => searchedWangId.includes(x.value)).map(x => x.name))
                 return false;
             }
 
@@ -641,12 +591,12 @@ function setMapImage(x, y, layerIndex, tilesetIndex, tilesetTileIndex) {
 
 
 /**
- * 
- * @param {number} x 
- * @param {number} y 
- * @returns 
+ *
+ * @param {number} x
+ * @param {number} y
+ * @returns A value coresponding tho the datalyer
  */
-function getMapInfo(x, y) {
+function getDataLayerInfo(x, y) {
     const dataLayer = viewModel.map.layers[viewModel.map.layers.length - 1];
     const array = dataLayer.data;
     const layerWidth = dataLayer.width;

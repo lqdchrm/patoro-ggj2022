@@ -65,6 +65,11 @@ body>* {
 ╚██████╗╚██████╔╝██║ ╚████║   ██║   ██║  ██║╚██████╔╝███████╗███████║
  ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚══════╝
 *******************************************************************************/
+.ui {
+    position: absolute;
+    z-index: 3;
+}
+
 #controls {
     position: absolute;
     top: 0;
@@ -182,6 +187,7 @@ body>* {
 }
 
 #player_list_div {
+    position: absolute;
     margin-left:100px;
     border: white solid 1px;
     padding: 5px;

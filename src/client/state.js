@@ -33,7 +33,7 @@ export function applyCommand({id, cmd}) {
     return updateRound();
 }
 
-export function updateRound() {
+function updateRound() {
     let players = Object.values(state.players);
     state.round = players.length ? Math.min(...players.map(player => player.commands.length)) : 0;
     return state;
@@ -43,5 +43,5 @@ export default {
     getState,
     addPlayer,
     removePlayer,
-    applyCommand
+    applyCommand,
 }
