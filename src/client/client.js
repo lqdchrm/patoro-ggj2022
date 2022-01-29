@@ -126,12 +126,9 @@ let viewModel = new class ViewModel {
         return spawnPoint;
     }
 
-    addNewPlayer(id, serverState) {
+    addNewPlayer(id) {
         let spawnPoint = this.calcSpawnPoint(id);
         this.players[id] = new PlayerViewModel(id, spawnPoint);
-        let player = serverState.players[id];
-        let moves = player.commands.slice(0, this.state.round);
-        moves.forEach(move => { this.players[id].move(move, viewModel.map); });
     }
 
     removePlayer(id) {
@@ -189,11 +186,10 @@ let viewModel = new class ViewModel {
 
                     const param = [...pos, ...holeSize];
 
-                    //TODO: undo holes...
                     if(move== 'fill')
                     setTerainBlock(...param, 'floor');
                     else
-                    setTerainBlock(...param, 'hole2') 
+                    setTerainBlock(...param, 'hole2');
                 }
                 break;
             case 'skip':
@@ -214,10 +210,12 @@ let viewModel = new class ViewModel {
         removedPlayers.forEach(id => this.removePlayer(id));
 
         // update moves
-        Object.values(serverState.players).forEach(player => {
-            let moves = player.commands.slice(this.state.round, serverState.round);
-            moves.forEach(move => this.handleMove(viewModel.map, player, move));
-        });
+        for(let round = this.state.round; round < serverState.round; ++round) {
+            Object.values(serverState.players).forEach(player => {
+                let move = player.commands[round];
+                this.handleMove(viewModel.map, player, move);
+            });
+        }
 
         // store state
         this.state = serverState;
