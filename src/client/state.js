@@ -13,7 +13,8 @@ export function addPlayer({ id, name }) {
     const newPlayer = {
         id,
         name,
-        commands: state.round ? Array(state.round).fill("skip") : []
+        commands: state.round ? Array(state.round).fill("skip") : [],
+        diedInRound: null,
     };
 
     state.players[id] = newPlayer;
@@ -21,7 +22,12 @@ export function addPlayer({ id, name }) {
 }
 
 export function removePlayer(id) {
-    delete state.players[id];
+    let alivePlayerCount = Object.values(state.players).filter(p => p.diedInRound == null).length;
+    if (alivePlayerCount == 1) {
+        Object.keys(state.players).forEach(id => delete state.players[id]);
+    } else {
+        state.players[id].diedInRound = state.round;
+    }
     return updateRound();
 }
 
