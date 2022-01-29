@@ -26,6 +26,42 @@ import State from "./state.js";
 //  ╚████╔╝ ██║███████╗╚███╔███╔╝██║ ╚═╝ ██║╚██████╔╝██████╔╝███████╗███████╗
 //   ╚═══╝  ╚═╝╚══════╝ ╚══╝╚══╝ ╚═╝     ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝╚══════╝
 //#region ViewModel
+class PlayerViewModel {
+    constructor(id, spawnPoint) {
+        this.id = id;
+        this.spawnPoint = spawnPoint;
+        this.sprite = createSprite('robot', this.spawnPoint.x, this.spawnPoint.y, id, id === socket.id);
+    }
+
+    get x() {
+        return +this.sprite.style.getPropertyValue('--x');
+    }
+
+    get y() {
+        return +this.sprite.style.getPropertyValue('--y');
+    }
+
+    get direction() {
+        let moves = viewModel.state.players[this.id].commands;
+        return moves.length ? moves[moves.length-1] : null;
+    }
+
+    move(move) {
+        let x = this.x;
+        let y = this.y;
+
+        switch (move) {
+            case 'up': y -= 1; break;
+            case 'down': y += 1; break;
+            case 'left': x -= 1; break;
+            case 'right': x += 1; break;
+            default: break;
+        }
+        setSpritePos(this.sprite, { x, y }, move ?? this.direction);
+    }
+
+}
+
 let viewModel = new class ViewModel {
 
     constructor() {
@@ -52,7 +88,7 @@ let viewModel = new class ViewModel {
     }
 
     calcSpawnPoint(id) {
-        let spawnPoints =  [{x: 3, y: 3}, {x: 3, y: 31}, {x: 36, y: 3}, {x: 36, y: 31}];
+        let spawnPoints = [{ x: 3, y: 3 }, { x: 3, y: 31 }, { x: 36, y: 3 }, { x: 36, y: 31 }];
 
         // sum of chars
         let spawnPoint = spawnPoints[[...id].reduce((acc, c) => {
@@ -64,15 +100,10 @@ let viewModel = new class ViewModel {
 
     addNewPlayer(id, serverState) {
         let spawnPoint = this.calcSpawnPoint(id);
-        this.players[id] = {
-            id,
-            sprite: createSprite('robot', spawnPoint.x, spawnPoint.y, id, id === socket.id),
-        }
+        this.players[id] = new PlayerViewModel(id, spawnPoint);
         let player = serverState.players[id];
         let moves = player.commands.slice(0, this.state.round);
-        moves.forEach(move => {
-            moveSprite(this.players[id].sprite, move);
-        })
+        moves.forEach(move => { this.players[id].move(move); });
     }
 
     removePlayer(id) {
@@ -81,6 +112,25 @@ let viewModel = new class ViewModel {
             const localPlayer = player;
             localPlayer.sprite.remove();
             delete this.players[id];
+        }
+    }
+
+    handleMove(player, move) {
+        switch(move) {
+            case 'left':
+            case 'right':
+            case 'up':
+            case 'down':
+                this.players[player.id].move(move);
+                break;
+            case'hole':
+                console.log("HOLE");
+                break;
+            case 'skip':
+                /* no-op */
+                break;
+            default:
+                throw new Error("Unknown move");
         }
     }
 
@@ -96,9 +146,7 @@ let viewModel = new class ViewModel {
         // update moves
         Object.values(serverState.players).forEach(player => {
             let moves = player.commands.slice(this.state.round, serverState.round);
-            moves.forEach(move => {
-                moveSprite(this.players[player.id].sprite, move);
-            });
+            moves.forEach(move => this.handleMove(player, move));
         });
 
         // store state
@@ -160,7 +208,6 @@ var name_change_input = document.getElementById('name_change_input');
 var uiMessages      = document.getElementById('messages');
 var uiUserId        = document.getElementById('userId');
 var uiRound         = document.getElementById('round');
-var player_list_div = document.getElementById('player_list_div');
 var player_list     = document.getElementById('player_list');
 
 // chat input box
@@ -465,9 +512,9 @@ function makeHole(x, y) {
  * @param {number} y the left upper corner of the terain
  * @param {number} width the width to set (minimum 2)
  * @param {*} height the height to set (minimum 2)
- * @param {'floor'|'hole1'|'hole2'|'hole3'|'raised'} terain
+ * @param {'floor'|'hole1'|'hole2'|'hole3'|'raised'} terrainName
  */
-function setTerainBlock(x, y, width, height, terain) {
+function setTerainBlock(x, y, width, height, terrainName) {
 
     if (width < 2 | height < 2) { // with corner only support we can't set a single tile
         return false;
@@ -475,7 +522,7 @@ function setTerainBlock(x, y, width, height, terain) {
     const tileset = viewModel.map.tilesets.filter(x => x.name == "tileset")[0];
     const tilesetIndex = viewModel.map.tilesets.indexOf(tileset);
     const terrain = tileset.terrains[0];
-    if (!terain) {
+    if (!terrainName) {
         return false;
     }
 
@@ -485,7 +532,7 @@ function setTerainBlock(x, y, width, height, terain) {
         obj[v.name] = i + 1/* one based index*/;
         return obj;
     }, {});
-    const terainIndex = terainNamesToTerainIndex[terain];
+    const terainIndex = terainNamesToTerainIndex[terrainName];
     const baseLayer = viewModel.map.layers.filter(x => x.name == "base")[0];
     const baseLayerIndex = viewModel.map.layers.indexOf(baseLayer);
 
@@ -569,7 +616,7 @@ function setTerainBlock(x, y, width, height, terain) {
                 return false;
             }
 
-            targetTileIds.push(foundWang.tileid);
+            targetTileIds.push({ tileid: foundWang.tileid, details: foundWang.wangid });
         }
     }
 
@@ -580,7 +627,65 @@ function setTerainBlock(x, y, width, height, terain) {
         const target = targetTileIds[i];
         const destinationX = i % width + x;
         const destinationY = Math.floor(i / width) + y;
-        setMapImage(destinationX, destinationY, baseLayerIndex, tilesetIndex, target);
+        setMapImage(destinationX, destinationY, baseLayerIndex, tilesetIndex, target.tileid);
+        const fallDirections = {
+            none: 0,
+            topleft: 1,
+            topright: 2,
+            bottomleft: 4,
+            bottomright: 8,
+            top: 1 + 2,
+            left: 1 + 4,
+            right: 2 + 8,
+            bottom: 4 + 8,
+            all: 1 + 2 + 4 + 8
+        }
+
+
+
+
+
+        const fallDirection = target.details.map((x, i) => {
+            if (!terrain.colors[x - 1]) {
+                return fallDirections.none;
+            }
+
+            if (!terrain.colors[x - 1].properties) {
+                return fallDirections.none;
+            }
+
+            if (!terrain.colors[x - 1].properties['hole']?.value) {
+                return fallDirections.none;
+            }
+
+            else if (i == directionIndex.topleft) {
+                return fallDirections.topleft;
+            }
+            else if (i == directionIndex.topright) {
+                return fallDirections.topright;
+            }
+            else if (i == directionIndex.bottomleft) {
+                return fallDirections.bottomleft;
+            }
+            else if (i == directionIndex.bottomright) {
+                return fallDirections.bottomright;
+            }
+            else {
+                return fallDirections.none;
+            }
+        }).reduce((o, n) => o + n, 0);
+
+        /**
+         * @type {Datatypes}
+         * */
+        let newDataState = 'none';
+
+        if (fallDirection != fallDirections.none) {
+            newDataState = 'fall';
+        }
+
+        setDataLayer(destinationX, destinationY, newDataState);
+
     }
 
     return true;
@@ -588,28 +693,102 @@ function setTerainBlock(x, y, width, height, terain) {
 
 }
 
+/**
+ *
+ * @param {number} x
+ * @param {number} y
+ * @param {Datatypes} value
+ */
+function setDataLayer(x, y, value) {
 
-function setMapImage(x, y, layerIndex, tilesetIndex, tilesetTileIndex) {
-    const layer = viewModel.map.layers[layerIndex];
-    const layerWidth = layer.width;
-    const layerTileIndex = x + y * layerWidth;
-    const tileset = viewModel.map.tilesets[tilesetIndex];
+    let index;
+    switch (value) {
+        case 'fall':
+        case 'fall-bottom':
+        case 'fall-bottom-left':
+        case 'fall-bottom-right':
+        case 'fall-top':
+        case 'fall-top-left':
+        case 'fall-top-right':
+        case 'fall-left':
+        case 'fall-right':
+            index = 0;
+            break;
 
+        case 'move-right':
+            index = 1;
+            break;
 
+        case 'spawn':
+            index = 2;
+            break;
 
-    // change render
-    const tileId = `layer_${layerIndex}_tile_${layerTileIndex}`;
-    const tileDiv = document.getElementById(tileId);
-    if (tileDiv) { // invisible layers will not be loaded
-        tileDiv.style.setProperty('--tileset-x', tilesetTileIndex % tileset.tilesPerRow);
-        tileDiv.style.setProperty('--tileset-y', Math.floor(tilesetTileIndex / tileset.tilesPerRow));
-        tileDiv.style.backgroundImage = `url(${tileset.imgPath})`;
+        default:
+            console.error(`unknown data layer state`, value);
+            setMapImage(x, y, 'data', undefined)
+            break
+        case 'none':
+
+            setMapImage(x, y, 'data', undefined)
+            break;
     }
 
-    // TODO: should it be changed? Or will this mess with incremental changes
-    //       I use the infos in the map, so it should reflect the correct state
-    // change model
-    viewModel.map.layers[layerIndex].data[layerTileIndex] = [tilesetIndex, tilesetTileIndex];
+    setMapImage(x, y, 'data', 'tileset_data', index)
+
+
+}
+
+/**
+ *
+ * @param {number} x
+ * @param {number} y
+ * @param {number|'data'|'deco'|'base'} layerIndex
+ * @param {number |'tileset'|'tileset_data'|'tileset_top'|undefined} tilesetIndex
+ * @param {number} tilesetTileIndex
+ */
+function setMapImage(x, y, layerIndex, tilesetIndex, tilesetTileIndex) {
+    if (typeof layerIndex == "string") {
+        const baseLayer = viewModel.map.layersByName[layerIndex];
+        layerIndex = viewModel.map.layers.indexOf(baseLayer);
+    }
+    if (typeof tilesetIndex == "string") {
+        const baseTileset = viewModel.map.tilesetsByName[tilesetIndex];
+        tilesetIndex = viewModel.map.tilesets.indexOf(baseTileset);
+    }
+    if (tilesetIndex == undefined || tilesetTileIndex == undefined) {
+
+        const layer = viewModel.map.layers[layerIndex];
+        const layerWidth = layer.width;
+        const layerTileIndex = x + y * layerWidth;
+
+        // change render
+        const tileId = `layer_${layerIndex}_tile_${layerTileIndex}`;
+        const tileDiv = document.getElementById(tileId);
+        if (tileDiv) { // invisible layers will not be loaded
+            tileDiv.style.backgroundImage = '';
+        }
+
+        viewModel.map.layers[layerIndex].data[layerTileIndex] = undefined;
+    } else {
+
+        const layer = viewModel.map.layers[layerIndex];
+        const layerWidth = layer.width;
+        const layerTileIndex = x + y * layerWidth;
+        const tileset = viewModel.map.tilesets[tilesetIndex];
+
+
+
+        // change render
+        const tileId = `layer_${layerIndex}_tile_${layerTileIndex}`;
+        const tileDiv = document.getElementById(tileId);
+        if (tileDiv) { // invisible layers will not be loaded
+            tileDiv.style.setProperty('--tileset-x', tilesetTileIndex % tileset.tilesPerRow);
+            tileDiv.style.setProperty('--tileset-y', Math.floor(tilesetTileIndex / tileset.tilesPerRow));
+            tileDiv.style.backgroundImage = `url(${tileset.imgPath})`;
+        }
+
+        viewModel.map.layers[layerIndex].data[layerTileIndex] = [tilesetIndex, tilesetTileIndex];
+    }
 
 }
 
@@ -618,7 +797,7 @@ function setMapImage(x, y, layerIndex, tilesetIndex, tilesetTileIndex) {
  *
  * @param {number} x
  * @param {number} y
- * @returns A value coresponding tho the datalyer
+ * @returns {Datatypes} A value coresponding tho the datalyer
  */
 function getDataLayerInfo(x, y) {
     const dataLayer = viewModel.map.layers[viewModel.map.layers.length - 1];
@@ -627,7 +806,7 @@ function getDataLayerInfo(x, y) {
     const index = x + y * layerWidth;
     const currentTile = array[index];
     if (!currentTile) { // 0 is not set tile
-        return 'floor';
+        return 'none';
     }
     const [tilesetIndex, tileIndex] = currentTile;
     // should only be one tileset in this layer but we check it...
@@ -637,13 +816,15 @@ function getDataLayerInfo(x, y) {
 
     switch (tileIndex) {
         case 0:
-            return 'hole';
+            return 'fall';
         case 1:
             return 'move-right';
+        case 2:
+            return 'spawn';
 
         default:
             console.error('Tileindex undefined', tileIndex);
-            return 'floor';
+            return 'none';
     }
 
 
@@ -678,41 +859,24 @@ function createSprite(type, x, y, name, isMe) {
 /**
  *
  * @param {HTMLDivElement} sprite
+ * @param {{x: number, y:number}} pos
  * @param {'up'|'down'|'left'|'right'|'skip'} direction
  */
-function moveSprite(sprite, direction) {
 
-    const x = parseInt(sprite.style.getPropertyValue('--x'));
-    const y = parseInt(sprite.style.getPropertyValue('--y'));
+function setSpritePos(sprite, pos, direction = null)
+{
+    sprite.style.setProperty('--x', pos.x);
+    sprite.style.setProperty('--y', pos.y);
 
-    sprite.classList.remove('down');
-    sprite.classList.remove('left');
-    sprite.classList.remove('right');
-    sprite.classList.remove('up');
-
-    switch (direction) {
-        case 'up':
-            sprite.style.setProperty('--y', y - 1);
-            sprite.classList.add('up');
-            break;
-        case 'down':
-            sprite.style.setProperty('--y', y + 1);
-            sprite.classList.add('down');
-            break;
-        case 'left':
-            sprite.style.setProperty('--x', x - 1);
-            sprite.classList.add('left');
-            break;
-        case 'right':
-            sprite.classList.add('right');
-            sprite.style.setProperty('--x', x + 1);
-            break;
-        case 'skip':
-            break;
-        default:
-            throw `Unknown direction ${direction}`
+    if (direction) {
+        sprite.classList.remove('down');
+        sprite.classList.remove('left');
+        sprite.classList.remove('right');
+        sprite.classList.remove('up');
+        sprite.classList.add(direction);
     }
 }
+
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
 

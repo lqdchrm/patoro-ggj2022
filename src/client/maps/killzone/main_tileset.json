@@ -24,6 +24,12 @@
                  "color":"#00ff00",
                  "name":"hole1",
                  "probability":1,
+                 "properties":[
+                        {
+                         "name":"hole",
+                         "type":"bool",
+                         "value":true
+                        }],
                  "tile":1
                 }, 
                 {
@@ -36,12 +42,24 @@
                  "color":"#ff00d8",
                  "name":"hole2",
                  "probability":1,
+                 "properties":[
+                        {
+                         "name":"hole",
+                         "type":"bool",
+                         "value":true
+                        }],
                  "tile":34
                 }, 
                 {
                  "color":"#ffff00",
                  "name":"hole3",
                  "probability":1,
+                 "properties":[
+                        {
+                         "name":"hole",
+                         "type":"bool",
+                         "value":true
+                        }],
                  "tile":39
                 }],
          "name":"default",
