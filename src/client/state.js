@@ -22,7 +22,7 @@ export function addPlayer({ id, name }) {
 }
 
 export function removePlayer(id) {
-    let alivePlayerCount = Object.values(state.players).filter(p => p.diedInRound == null).length;
+    let alivePlayerCount = Object.values(state.players).filter(p => p.diedInRound === null).length;
     if (alivePlayerCount == 1) {
         Object.keys(state.players).forEach(id => delete state.players[id]);
     } else {
