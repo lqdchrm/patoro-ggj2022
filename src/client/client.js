@@ -119,11 +119,63 @@ let viewModel = new class ViewModel {
 
     move(command) {
         this.commandBuffer.push(command);
-        if (this.commandBuffer.length == 5)
-        {
+        if (this.commandBuffer.length == 5) {
             socket.emit("command", this.commandBuffer);
             this.commandBuffer.splice(0, this.commandBuffer.length);
         }
+        this.updateMarker();
+    }
+
+    updateMarker() {
+        const currentPlayer = this.players[socket.id];
+        if (!this.markers) {
+            this.markers = [createSprite("cursor", currentPlayer.x, currentPlayer.y),
+            createSprite("cursor-dig", currentPlayer.x, currentPlayer.y),
+            createSprite("cursor-dig", currentPlayer.x, currentPlayer.y),
+            createSprite("cursor-dig", currentPlayer.x, currentPlayer.y),
+            createSprite("cursor-dig", currentPlayer.x, currentPlayer.y),
+            createSprite("cursor-dig", currentPlayer.x, currentPlayer.y),
+            ];
+        }
+        this.markers.forEach(x => setSpriteVisibility(x, false))
+        setSpriteVisibility(this.markers[0], true)
+        let usedDigs = 0;
+        const vector = { x: currentPlayer.x, y: currentPlayer.y };
+
+        for (let index = 0; index < this.commandBuffer.length; index++) {
+            const c = this.commandBuffer[index];
+
+            switch (c) {
+                case 'left':
+                    vector.x -= 1;
+                    break;
+                case 'right':
+                    vector.x += 1;
+                    break;
+                case 'up':
+                    vector.y -= 1;
+                    break;
+                case 'down':
+                    vector.y += 1;
+                    break;
+
+                case 'hole':
+                case 'fill':
+                    {
+                        usedDigs++;
+                        setSpriteVisibility(this.markers[usedDigs], true)
+                        const direction = index > 0
+                            ? this.commandBuffer[index - 1]
+                            : getSpriteDirection(currentPlayer.sprite);
+                        const translate = directionToVector(direction);
+                        setSpritePos(this.markers[usedDigs], { x: vector.x + translate.x, y: vector.y + translate.y }, direction)
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+        setSpritePos(this.markers[0], vector)
     }
 
     calcSpawnPoint(id) {
@@ -156,9 +208,8 @@ let viewModel = new class ViewModel {
         var tile = getDataLayerInfo(local_player.x, local_player.y);
         if (tile == 'fall') {
             local_player.falling_counter += 1;
-            local_player.sprite.style.transform = 'scale(' + 1/local_player.falling_counter + ')';
-            if (local_player.falling_counter == 3)
-            {
+            local_player.sprite.style.transform = 'scale(' + 1 / local_player.falling_counter + ')';
+            if (local_player.falling_counter == 3) {
                 local_player.falling_counter = 0;
                 local_player.sprite.style.transform = 'scale(1)';
                 var new_spawn = this.calcSpawnPoint(local_player.id);
@@ -181,14 +232,21 @@ let viewModel = new class ViewModel {
                     const direction = getSpriteDirection(playerData.sprite);
                     let holeSize;
                     const vector = directionToVector(direction);
-                    const pos = [vector.x * 2 + playerData.x, vector.y * 2 + playerData.y];
+                    const pos = [vector.x + playerData.x, vector.y + playerData.y];
                     if (direction == "down" || direction == 'up') {
                         holeSize = [3, 2]
                         pos[0] -= 1;
+                        if (direction == 'up') {
+                            pos[1] -= 1;
+                        }
                     }
                     else if (direction == 'left' || direction == 'right') {
                         holeSize = [2, 3]
                         pos[1] -= 1;
+                        if (direction == 'left') {
+                            pos[0] -= 1;
+                        }
+
                     }
                     else {
                         holeSize = [0, 0]
@@ -199,7 +257,7 @@ let viewModel = new class ViewModel {
 
                     const param = [...pos, ...holeSize];
 
-                    if(move== 'fill')
+                    if (move == 'fill')
                         setTerainBlock(...param, 'floor');
                     else
                         setTerainBlock(...param, 'hole2');
@@ -237,7 +295,7 @@ let viewModel = new class ViewModel {
         // update moves
         let allPlayers = Object.keys(serverState.players).sort().map(id => serverState.players[id]);
 
-        for(let round = this.state.round; round < serverState.round; ++round) {
+        for (let round = this.state.round; round < serverState.round; ++round) {
             allPlayers.forEach(player => {
                 let move = round < player.commands.length ? player.commands[round] : null;
                 if (move) {
@@ -745,13 +803,31 @@ function setTerainBlock(x, y, width, height, terrainName) {
             }
 
 
-            const foundWang = terrain.wangtiles.filter(x => arrayEquals(x.wangid, searchedWangId))[0];
-            if (!foundWang) {
+            const foundWangs = terrain.wangtiles.filter(x => arrayEquals(x.wangid, searchedWangId));
+            if (!foundWangs || foundWangs.length == 0) {
                 console.log(`Faild to find wang tile at (${x + xPos},${y + yPos})`, Object.keys(terainNamesToTerainIndex).map(k => ({ name: k, value: terainNamesToTerainIndex[k] })).filter(x => searchedWangId.includes(x.value)).map(x => x.name))
                 return false;
             }
 
-            targetTileIds.push({ tileid: foundWang.tileid, details: foundWang.wangid });
+
+            const possibleTileIds = foundWangs.map(x => ({ propability: tileset.tiles[x.tileid]?.probability ?? 1, id: x.tileid }));
+
+            const maxProp = possibleTileIds.reduce((o, n) => o + n.propability, 0);
+            const r = Math.random() * maxProp;
+
+            let p = 0;
+            let i = 0;
+            for (i = 0; i < possibleTileIds.length; i++) {
+                const element = possibleTileIds[i];
+                p += element.propability;
+                if (p > r)
+                    break;
+            }
+            const foundWang = possibleTileIds[i].id
+
+
+
+            targetTileIds.push({ tileid: foundWang, details: foundWangs[0].wangid });
         }
     }
 
@@ -943,7 +1019,7 @@ function getDataLayerInfo(x, y) {
     if (!currentTile) { // 0 is not set tile
         return 'none';
     }
-    const [tilesetIndex, tileIndex] = currentTile;
+    const [, tileIndex] = currentTile;
 
     switch (tileIndex) {
         case 0:
@@ -963,7 +1039,7 @@ function getDataLayerInfo(x, y) {
 
 /**
  *
- * @param {'man'|'robot'} type
+ * @param {'man'|'robot'|'cursor'|'cursor-dig'} type
  * @param {number} x
  * @param {number} y
  * @param {string|undefined} name
@@ -1039,6 +1115,20 @@ function getSpriteDirection(sprite) {
         return 'up';
 
     return 'down';
+}
+
+/**
+ *
+ * @param {HTMLDivElement} sprite
+ * @param {boolean} visible
+ * @returns
+ */
+function setSpriteVisibility(sprite, visible) {
+    if (visible)
+        sprite.classList.remove('hide')
+    else
+        sprite.classList.add('hide')
+
 }
 
 //#endregion
