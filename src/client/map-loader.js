@@ -13,6 +13,17 @@ async function loadTileset(folder, input) {
     const imgFile = tileset.image.split(/\//).pop();
     const imgPath = `${folder}/${imgFile}`;
 
+    let terrains = []
+    if (tileset.wangsets) {
+
+        terrains = [...tileset.wangsets];
+        terrains.map((t, i) => {
+            const modifiedColors = t.colors.map(x => ({ ...x, properties: arrayToObjectByProp(x.properties) }));
+            const changedTerrain = { ...t, id: i + 1, index: i, colorsByName: arrayToObjectByProp(modifiedColors) };
+            changedTerrain.colors = modifiedColors;
+            return changedTerrain;
+        })
+    }
     return {
         imgPath,
         name: tileset.name,
@@ -22,7 +33,7 @@ async function loadTileset(folder, input) {
         tileWidth: tileset.tilewidth,
         tileHeight: tileset.tileheight,
         tiles: tileset.tiles?.reduce((obj, v) => { obj[v.id] = v; return obj }, {}) ?? {},
-        terrains: tileset.wangsets,
+        terrains,
     }
 
 }
