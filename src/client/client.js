@@ -148,8 +148,11 @@ let viewModel = new class ViewModel {
         var tile = getDataLayerInfo(local_player.x, local_player.y);
         if (tile == 'fall') {
             local_player.falling_counter += 1;
-            if (local_player.falling_counter == 3) {
+            local_player.sprite.style.transform = 'scale(' + 1/local_player.falling_counter + ')';
+            if (local_player.falling_counter == 3)
+            {
                 local_player.falling_counter = 0;
+                local_player.sprite.style.transform = 'scale(1)';
                 var new_spawn = this.calcSpawnPoint(local_player.id);
                 setSpritePos(local_player.sprite, { x: new_spawn.x, y: new_spawn.y }, move ?? local_player.direction);
             }
