@@ -2,8 +2,7 @@ const state = {
     "round": 0,
     "players": {
 
-    },
-    "map": null
+    }
 }
 
 export function getState() {
@@ -40,17 +39,9 @@ function updateRound() {
     return state;
 }
 
-export function setMap(map) {
-    if (!state.map) {
-        state.map = map;
-    }
-    return state;
-}
-
 export default {
     getState,
     addPlayer,
     removePlayer,
     applyCommand,
-    setMap
 }

@@ -70,7 +70,6 @@ let viewModel = new class ViewModel {
     async init() {
         this.mapLoading = loadMap("killzone", "./maps/killzone");
         this.map = await this.mapLoading;
-        socket.emit('map', this.map.serverInfo);
         await updateMap();
     }
 
@@ -80,10 +79,11 @@ let viewModel = new class ViewModel {
 
     update(serverState) {
         // add new players
-        let addedPlayers = Object.keys(serverState.players).filter(id => !this.state.players[id]);
+        let addedPlayers = Object.keys(serverState.players).filter(id => !this.state.players[id]).sort();
         addedPlayers.forEach(id => {
+            let spawnPoint =  {x: 3, y: 3};
             this.players[id] = {
-                sprite: createSprite('robot', 3, 3, id)
+                sprite: createSprite('robot', spawnPoint.x, spawnPoint.y, id),
             }
             let player = serverState.players[id];
             let moves = player.commands.slice(0, this.state.round);
@@ -94,7 +94,7 @@ let viewModel = new class ViewModel {
         });
 
         // remove old players
-        let removedPlayers = Object.keys(this.state.players).filter(id => !serverState.players[id]);
+        let removedPlayers = Object.keys(this.state.players).filter(id => !serverState.players[id]).sort();
         removedPlayers.forEach(id => {
             if (this.players[id]) {
                 const localPlayer = this.players[id];
@@ -268,7 +268,7 @@ async function updateMap() {
     [...uiMap.children].forEach(c => c.remove());
 
     // define position for actor layer
-    const actorLayerPosition = map.properties?.actorlayer ?? map.layers.length;
+    const actorLayerPosition = map.properties?.actorlayer?.value ?? map.layers.length;
 
     // configure map
     uiMap.style = `--actor-layer:${actorLayerPosition};--h-tiles:${map.width};--v-tiles:${map.height};--tileWidth:${map.tileWidth}; --tileHeight:${map.tileHeight}`
@@ -400,8 +400,6 @@ function makeHole(x, y) {
     const holeIndex = 0
     const dataTileset = viewModel.map.tilesets.filter(x => x.name == "tileset_data")[0];
     const dataTilesetIndex = viewModel.map.tilesets.indexOf(dataTileset);
-
-
 
     setMapImage(x, y, viewModel.map.layers.length - 1, dataTilesetIndex, holeIndex);
 

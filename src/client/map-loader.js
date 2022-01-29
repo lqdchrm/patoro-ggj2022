@@ -42,6 +42,12 @@ function updateIndex(data, layer) {
     return result;
 }
 
+function arrayToObjectByProp(array, prop = "name") {
+    return array?.reduce((acc, value) => {
+        acc[value[prop]] = value;
+        return acc;
+    }, {}) ?? {};
+}
 
 export async function loadMap(mapname, folder) {
 
@@ -53,21 +59,29 @@ export async function loadMap(mapname, folder) {
             (input) => loadTileset(folder, input)
         )
     );
+    let tilesetsByName = arrayToObjectByProp(tilesets);
+
+    let layers = data.layers.map(layer => updateIndex(data, layer));
+    let layersByName = arrayToObjectByProp(layers);
+    let properties = arrayToObjectByProp(data?.properties);
+
+    let spawnPoints = [];
 
     return {
-        tileWidth: data.tilewidth,
-        tileHeight: data.tileheight,
-        tilesets,
         height: data.height,
         width: data.width,
-        layers: data.layers.map(layer => updateIndex(data, layer)),
-        properties: data?.properties?.reduce((obj, v) => {
-            obj[v.name] = v.value;
-            return obj
-        }, {}) ?? {},
-        serverInfo: {
-            spawnPoints: []
-        }
+        tileWidth: data.tilewidth,
+        tileHeight: data.tileheight,
+
+        tilesets,
+        tilesetsByName,
+
+        layers,
+        layersByName,
+
+        properties,
+
+        spawnPoints,
     };
 }
 
