@@ -34,22 +34,11 @@ class PlayerViewModel {
 
         this.sprite = createSprite('robot', this.spawnPoint.x, this.spawnPoint.y, id, id === socket.id);
         this.renderPromise = Promise.resolve();
-
-        this._x = this.spawnPoint.x;
-        this._y = this.spawnPoint.y;
     }
 
-    get x() {
-        if (!this._x == +this.sprite.style.getPropertyValue('--x'))
-            throw new Error("Pos mismatch");
-        return this._x;
-    }
+    get x() { return +this.sprite.style.getPropertyValue('--x'); }
 
-    get y() {
-        if (!this._y == +this.sprite.style.getPropertyValue('--y'))
-            throw new Error("Pos mismatch");
-        return this._y;
-    }
+    get y() { return +this.sprite.style.getPropertyValue('--y'); }
 
     get direction() {
         let moves = viewModel.state.players[this.id].commands;
@@ -65,8 +54,6 @@ class PlayerViewModel {
         x += movement.x;
         y += movement.y;
         if (x >= 0 && x < map.width && y >= 0 && y < map.height) {
-            this._x = x;
-            this._y = y;
             setSpritePos(this.sprite, { x: x, y: y }, move ?? 'skip');
         }
     }
