@@ -1212,7 +1212,9 @@ function createSprite(type, x, y, name, isMe, direction) {
     }
     spriteDiv.classList.add('sprite');
     spriteDiv.classList.add(type);
-    spriteDiv.classList.add(direction);
+    if (direction) {
+        spriteDiv.classList.add(direction);
+    }
     if (isMe) {
         spriteDiv.classList.add("me");
     }
