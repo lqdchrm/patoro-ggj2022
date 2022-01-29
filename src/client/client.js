@@ -70,9 +70,8 @@ let viewModel = new class ViewModel {
         this.players = {};              // local playerViewModels holding the sprite
 
         this.commandBuffer = [];
-        this.bufferTimer = null;
-        this.uiTimer = null;
-        this.uiTimerValue = null;
+        this.timer = null;
+        this.timerValue = null;
 
         /**@type {TileMap} */
         this.map = {};
@@ -85,30 +84,34 @@ let viewModel = new class ViewModel {
     async init() {
         this.map = await loadMap("killzone", "./maps/killzone");
         await updateMap();
-        this.resetTimer();
+        this.startTimer();
     }
 
-    resetTimer() {
-        clearTimeout(this.bufferTimer);
-        clearInterval(this.uiTimer);
-        this.uiTimerValue = 10;
-        this.uiTimer = setInterval(() => {
-            this.uiTimerValue -= 1;
-        }, 1000);
-        this.bufferTimer = setTimeout(() => {
-            if (this.commandBuffer.length < 5) {
-                let cmds = Array(5 - this.commandBuffer.length).fill('skip');
-                cmds.forEach(cmd => this.move(cmd));
+    startTimer() {
+        this.timerValue = 10;
+        this.timer = setInterval(() => {
+            this.timerValue -= 1;
+            if (this.timerValue <= 0) {
+                if (this.commandBuffer.length < 5) {
+                    let cmds = Array(5 - this.commandBuffer.length).fill('skip');
+                    cmds.forEach(cmd => this.move(cmd));
+                }
+                this.timerValue = 10;
+                socket.emit("command", this.commandBuffer);
+                this.commandBuffer.splice(0, this.commandBuffer.length);
             }
-        }, 10000);
+        }, 1000);
+    }
+
+    undo() {
+        if (this.commandBuffer.length) {
+            this.commandBuffer.splice(this.commandBuffer.length - 1, 1);
+        }
     }
 
     move(command) {
-        this.commandBuffer.push(command);
-        if (this.commandBuffer.length >= 5) {
-            this.resetTimer();
-            socket.emit("command", this.commandBuffer);
-            this.commandBuffer.splice(0, this.commandBuffer.length);
+        if (this.commandBuffer.length < 5) {
+            this.commandBuffer.push(command);
         }
     }
 
@@ -220,7 +223,13 @@ let viewModel = new class ViewModel {
 
         // update UI
         this.updateUi();
+    }
 
+    uiAction(cmd) {
+        switch (cmd) {
+            case 'undo': this.undo(); break;
+            default: throw new Error("Unknown uiAction");
+        }
     }
 
     updateUi() {
@@ -316,6 +325,13 @@ document.querySelectorAll(".command").forEach(cmd => {
     });
 });
 
+// uiCommand buttons
+document.querySelectorAll(".uiCommand").forEach(cmd => {
+    cmd.addEventListener("click", () => {
+        viewModel.uiAction(cmd.id);
+    });
+});
+
 // round
 viewModel = new Proxy(viewModel, {
     set: function (target, key, value) {
@@ -327,7 +343,7 @@ viewModel = new Proxy(viewModel, {
             case 'state':
                 uiRound.textContent = value.round;
                 break;
-            case 'uiTimerValue':
+            case 'timerValue':
                 uiTimer.textContent = value;
                 break;
         }
@@ -967,9 +983,9 @@ function setSpritePos(sprite, pos, direction = null) {
 }
 
 /**
- * 
- * @param {HTMLDivElement} sprite 
- * @returns 
+ *
+ * @param {HTMLDivElement} sprite
+ * @returns
  */
 function getSpriteDirection(sprite) {
     if (sprite.classList.contains('down'))
