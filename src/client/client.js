@@ -46,18 +46,23 @@ class PlayerViewModel {
         return moves.length ? moves[moves.length-1] : null;
     }
 
-    move(move) {
+    move(move, map) {
         let x = this.x;
         let y = this.y;
 
-        switch (move) {
-            case 'up': y -= 1; break;
-            case 'down': y += 1; break;
-            case 'left': x -= 1; break;
-            case 'right': x += 1; break;
-            default: break;
+        var movement = directionToVector(move);
+        console.log(x + " : " + y);
+        var new_player_position = {x: this.x + movement.x, y: this.y + movement.y};
+        console.log(new_player_position);
+        if (new_player_position.x >= 0
+            && new_player_position.x < map.width
+            && new_player_position.y >= 0
+            && new_player_position.y < map.height) {
+            x = new_player_position.x;
+            y = new_player_position.y;
         }
-        setSpritePos(this.sprite, { x, y }, move ?? this.direction);
+
+        setSpritePos(this.sprite, { x: x, y: y }, move ?? this.direction);
     }
 
 }
@@ -103,7 +108,7 @@ let viewModel = new class ViewModel {
         this.players[id] = new PlayerViewModel(id, spawnPoint);
         let player = serverState.players[id];
         let moves = player.commands.slice(0, this.state.round);
-        moves.forEach(move => { this.players[id].move(move); });
+        moves.forEach(move => { this.players[id].move(move, viewModel.map); });
     }
 
     removePlayer(id) {
@@ -115,13 +120,13 @@ let viewModel = new class ViewModel {
         }
     }
 
-    handleMove(player, move) {
+    handleMove(map, player, move) {
         switch(move) {
             case 'left':
             case 'right':
             case 'up':
             case 'down':
-                this.players[player.id].move(move);
+                this.players[player.id].move(move, map);
                 break;
             case'hole':
                 console.log("HOLE");
@@ -146,7 +151,7 @@ let viewModel = new class ViewModel {
         // update moves
         Object.values(serverState.players).forEach(player => {
             let moves = player.commands.slice(this.state.round, serverState.round);
-            moves.forEach(move => this.handleMove(player, move));
+            moves.forEach(move => this.handleMove(viewModel.map, player, move));
         });
 
         // store state
@@ -154,6 +159,7 @@ let viewModel = new class ViewModel {
 
         // update UI
         this.updateUi();
+        
     }
 
     updateUi() {
@@ -856,6 +862,24 @@ function createSprite(type, x, y, name, isMe) {
     return spriteDiv;
 }
 
+function directionToVector(direction)
+{
+    switch (direction) {
+        case 'up':
+            return {x: 0, y:-1};
+        case 'down':
+            return {x: 0, y: 1};
+        case 'left':
+            return {x:-1, y: 0};
+        case 'right':
+            return {x: 1, y: 0};
+        case 'skip':
+            return {x: 0, y: 0};
+            break;
+        default:
+            throw `Unknown direction ${direction}`
+    }
+}
 /**
  *
  * @param {HTMLDivElement} sprite
