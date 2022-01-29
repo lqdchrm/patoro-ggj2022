@@ -29,6 +29,7 @@ import State from "./state.js";
 class PlayerViewModel {
     constructor(id, spawnPoint) {
         this.id = id;
+        this.falling_counter = 0;
         this.spawnPoint = spawnPoint;
         this.sprite = createSprite('robot', this.spawnPoint.x, this.spawnPoint.y, id, id === socket.id);
     }
@@ -43,7 +44,7 @@ class PlayerViewModel {
 
     get direction() {
         let moves = viewModel.state.players[this.id].commands;
-        return moves.length ? moves[moves.length-1] : null;
+        return moves.length ? moves[moves.length - 1] : null;
     }
 
     move(move, map) {
@@ -55,12 +56,6 @@ class PlayerViewModel {
         x += movement.x;
         y += movement.y;
         if (x >= 0 && x < map.width && y >= 0 && y < map.height) {
-            var tile = getDataLayerInfo(x, y);
-            if (tile == 'fall') {
-                var new_spawn = viewModel.calcSpawnPoint(this.id);
-                x = new_spawn.x;
-                y = new_spawn.y;
-            }
             setSpritePos(this.sprite, { x: x, y: y }, move ?? this.direction);
         }
     }
@@ -71,6 +66,7 @@ let viewModel = new class ViewModel {
     constructor() {
         this.id = null;                 // socket id
 
+        /**@type {Record<string,PlayerViewModel>} */
         this.players = {};              // local playerViewModels holding the sprite
 
         this.commandBuffer = [];
@@ -130,6 +126,18 @@ let viewModel = new class ViewModel {
     }
 
     handleMove(map, player, move) {
+        var local_player = this.players[player.id];
+        var tile = getDataLayerInfo(local_player.x, local_player.y);
+        if (tile == 'fall') {
+            local_player.falling_counter += 1;
+            if (local_player.falling_counter == 3)
+            {
+                local_player.falling_counter = 0;
+                var new_spawn = this.calcSpawnPoint(local_player.id);
+                setSpritePos(local_player.sprite, { x: new_spawn.x, y: new_spawn.y }, move ?? local_player.direction);
+            }
+            return;
+        }
         switch(move) {
             case 'left':
             case 'right':
@@ -137,8 +145,34 @@ let viewModel = new class ViewModel {
             case 'down':
                 this.players[player.id].move(move, map);
                 break;
-            case'hole':
+            case 'hole':
                 console.log("HOLE");
+                {
+                    const playerData = this.players[player.id];
+                    const direction = getSpriteDirection(playerData.sprite);
+                    let holeSize;
+                    const vector = directionToVector(direction);
+                    const pos = [vector.x * 2 + playerData.x, vector.y * 2 + playerData.y];
+                    if (direction == "down" || direction == 'up') {
+                        holeSize = [3, 2]
+                        pos[0] -= 1;
+                    }
+                    else if (direction == 'left' || direction == 'right') {
+                        holeSize = [2, 3]
+                        pos[1] -= 1;
+                    }
+                    else {
+                        holeSize = [0, 0]
+                        console.error('Unown direction', direction);
+                    }
+
+
+
+                    const param = [...pos, ...holeSize];
+                    
+                    //TODO: undo holes...
+                    setTerainBlock(...param, 'hole1') || setTerainBlock(...param, 'floor');
+                }
                 break;
             case 'skip':
                 /* no-op */
@@ -215,8 +249,8 @@ let viewModel = new class ViewModel {
 //  ╚═════╝ ╚═╝    ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝
 //#region UI Handlers
 
-var form              = document.getElementById('form');
-var input             = document.getElementById('input');
+var form = document.getElementById('form');
+var input = document.getElementById('input');
 var name_change_input = document.getElementById('name_change_input');
 
 var uiMessages      = document.getElementById('messages');
@@ -874,19 +908,18 @@ function createSprite(type, x, y, name, isMe) {
     return spriteDiv;
 }
 
-function directionToVector(direction)
-{
+function directionToVector(direction) {
     switch (direction) {
         case 'up':
-            return {x: 0, y:-1};
+            return { x: 0, y: -1 };
         case 'down':
-            return {x: 0, y: 1};
+            return { x: 0, y: 1 };
         case 'left':
-            return {x:-1, y: 0};
+            return { x: -1, y: 0 };
         case 'right':
-            return {x: 1, y: 0};
+            return { x: 1, y: 0 };
         case 'skip':
-            return {x: 0, y: 0};
+            return { x: 0, y: 0 };
         default:
             throw `Unknown direction ${direction}`
     }
@@ -898,8 +931,7 @@ function directionToVector(direction)
  * @param {'up'|'down'|'left'|'right'|'skip'} direction
  */
 
-function setSpritePos(sprite, pos, direction = null)
-{
+function setSpritePos(sprite, pos, direction = null) {
     sprite.style.setProperty('--x', pos.x);
     sprite.style.setProperty('--y', pos.y);
 
@@ -910,6 +942,24 @@ function setSpritePos(sprite, pos, direction = null)
         sprite.classList.remove('up');
         sprite.classList.add(direction);
     }
+}
+
+/**
+ * 
+ * @param {HTMLDivElement} sprite 
+ * @returns 
+ */
+function getSpriteDirection(sprite) {
+    if (sprite.classList.contains('down'))
+        return 'down';
+    if (sprite.classList.contains('left'))
+        return 'left';
+    if (sprite.classList.contains('right'))
+        return 'right';
+    if (sprite.classList.contains('up'))
+        return 'up';
+
+    return 'down';
 }
 
 //#endregion
