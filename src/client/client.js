@@ -146,6 +146,7 @@ let viewModel = new class ViewModel {
                 this.players[player.id].move(move, map);
                 break;
             case 'hole':
+            case 'fill':
                 console.log("HOLE");
                 {
                     const playerData = this.players[player.id];
@@ -171,7 +172,10 @@ let viewModel = new class ViewModel {
                     const param = [...pos, ...holeSize];
                     
                     //TODO: undo holes...
-                    setTerainBlock(...param, 'hole1') || setTerainBlock(...param, 'floor');
+                    if(move== 'fill')
+                    setTerainBlock(...param, 'floor');
+                    else
+                    setTerainBlock(...param, 'hole2') 
                 }
                 break;
             case 'skip':
