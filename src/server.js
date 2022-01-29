@@ -37,6 +37,8 @@ io.on('connection', (socket) => {
     console.log(`[IO] <${socket.id}> a user connected`);
     let msg = `User <${socket.id}> connected`;
     socket.broadcast.emit('chat message', { from: socket.id, msg });
+    let state = State.addPlayer({id: socket.id, name: "Unknown"});
+    io.emit('update', state);
 
     // log all messages
     socket.onAny((message, ...args) => {
@@ -49,6 +51,8 @@ io.on('connection', (socket) => {
         let msg = `User <${socket.id}> disconnected: ${reason}`;
         socket.broadcast.emit('chat message', { from: socket.id, msg });
         socket.broadcast.emit('left', { from: socket.id, user: user });
+        let state = State.removePlayer(socket.id);
+        io.emit('update', state);
     });
 
     // handle messages

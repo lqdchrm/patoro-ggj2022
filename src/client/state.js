@@ -17,12 +17,12 @@ export function addPlayer({ id, name }) {
     };
 
     state.players[id] = newPlayer;
-    return state;
+    return updateRound();
 }
 
 export function removePlayer(id) {
     delete state.players[id];
-    return state;
+    return updateRound();
 }
 
 export function applyCommand({id, cmd}) {
@@ -34,7 +34,8 @@ export function applyCommand({id, cmd}) {
 }
 
 export function updateRound() {
-    let round = Math.min(Object.values(state.players).map(player => player.commands?.length ?? 0));
+    let round = Math.min(...Object.values(state.players).map(player => player.commands.length));
+    console.log(state.players, round);
     state.round = round;
     return state;
 }
