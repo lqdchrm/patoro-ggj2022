@@ -55,7 +55,7 @@ body>* {
     display: flex;
     flex-direction: row;
     align-items: stretch;
-    justify-content: space-between;
+    justify-content: flex-start;
 }
 
 .topbar > * {
@@ -64,8 +64,17 @@ body>* {
     display: block;
 }
 
+#stats {
+    width: 300px;
+}
+
 #player_list_div {
     flex: 0 1 auto;
+    justify-self: flex-end;
+}
+
+.spacer {
+    flex: 1 1 auto;
 }
 
 .move_done {
