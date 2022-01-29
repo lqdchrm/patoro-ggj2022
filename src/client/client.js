@@ -58,7 +58,7 @@ let viewModel = new class ViewModel {
                 sprite: createSprite('robot', 3, 3, id)
             }
             let player = serverState.players[id];
-            let moves = player.commands.slice(0, serverState.round);
+            let moves = player.commands.slice(0, this.state.round);
             moves.forEach(move => {
                 moveSprite(this.players[id].sprite, move);
             })
