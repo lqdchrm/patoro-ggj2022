@@ -81,7 +81,7 @@ let viewModel = new class ViewModel {
     }
 
     calcSpawnPoint(id) {
-        let spawnPoints =  [{x: 3, y: 3}, {x: 3, y: 31}, {x: 36, y: 3}, {x: 36, y: 31}];
+        let spawnPoints = [{ x: 3, y: 3 }, { x: 3, y: 31 }, { x: 36, y: 3 }, { x: 36, y: 31 }];
 
         // sum of chars
         let spawnPoint = spawnPoints[[...id].reduce((acc, c) => {
@@ -592,11 +592,11 @@ function setTerainBlock(x, y, width, height, terrainName) {
                 return fallDirections.none;
             }
 
-            if (!x.properties) {
+            if (!terrain.colors[x - 1].properties) {
                 return fallDirections.none;
             }
 
-            if (!x.properties['hole']?.value) {
+            if (!terrain.colors[x - 1].properties['hole']?.value) {
                 return fallDirections.none;
             }
 
@@ -697,7 +697,7 @@ function setMapImage(x, y, layerIndex, tilesetIndex, tilesetTileIndex) {
         const baseTileset = viewModel.map.tilesetsByName[tilesetIndex];
         tilesetIndex = viewModel.map.tilesets.indexOf(baseTileset);
     }
-    if (tilesetIndex == undefined) {
+    if (tilesetIndex == undefined || tilesetTileIndex == undefined) {
 
         const layer = viewModel.map.layers[layerIndex];
         const layerWidth = layer.width;
@@ -707,7 +707,7 @@ function setMapImage(x, y, layerIndex, tilesetIndex, tilesetTileIndex) {
         const tileId = `layer_${layerIndex}_tile_${layerTileIndex}`;
         const tileDiv = document.getElementById(tileId);
         if (tileDiv) { // invisible layers will not be loaded
-            tileDiv.style.backgroundImage = undefined;
+            tileDiv.style.backgroundImage = '';
         }
 
         viewModel.map.layers[layerIndex].data[layerTileIndex] = undefined;

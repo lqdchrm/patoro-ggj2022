@@ -17,8 +17,15 @@ async function loadTileset(folder, input) {
     if (tileset.wangsets) {
 
         terrains = [...tileset.wangsets];
-        terrains.map((t, i) => {
-            const modifiedColors = t.colors.map(x => ({ ...x, properties: arrayToObjectByProp(x.properties) }));
+        terrains = terrains.map((t, i) => {
+            const modifiedColors = t.colors.map(x => {
+
+                const newObj = { ...x };
+                newObj.properties = arrayToObjectByProp(x.properties);
+                return newObj;
+
+
+            });
             const changedTerrain = { ...t, id: i + 1, index: i, colorsByName: arrayToObjectByProp(modifiedColors) };
             changedTerrain.colors = modifiedColors;
             return changedTerrain;
