@@ -119,8 +119,7 @@ let viewModel = new class ViewModel {
 
     move(command) {
         this.commandBuffer.push(command);
-        if (this.commandBuffer.length == 5)
-        {
+        if (this.commandBuffer.length == 5) {
             socket.emit("command", this.commandBuffer);
             this.commandBuffer.splice(0, this.commandBuffer.length);
         }
@@ -209,9 +208,8 @@ let viewModel = new class ViewModel {
         var tile = getDataLayerInfo(local_player.x, local_player.y);
         if (tile == 'fall') {
             local_player.falling_counter += 1;
-            local_player.sprite.style.transform = 'scale(' + 1/local_player.falling_counter + ')';
-            if (local_player.falling_counter == 3)
-            {
+            local_player.sprite.style.transform = 'scale(' + 1 / local_player.falling_counter + ')';
+            if (local_player.falling_counter == 3) {
                 local_player.falling_counter = 0;
                 local_player.sprite.style.transform = 'scale(1)';
                 var new_spawn = this.calcSpawnPoint(local_player.id);
@@ -297,7 +295,7 @@ let viewModel = new class ViewModel {
         // update moves
         let allPlayers = Object.keys(serverState.players).sort().map(id => serverState.players[id]);
 
-        for(let round = this.state.round; round < serverState.round; ++round) {
+        for (let round = this.state.round; round < serverState.round; ++round) {
             allPlayers.forEach(player => {
                 let move = round < player.commands.length ? player.commands[round] : null;
                 if (move) {
@@ -801,7 +799,7 @@ function setTerainBlock(x, y, width, height, terrainName) {
 
 
             const foundWangs = terrain.wangtiles.filter(x => arrayEquals(x.wangid, searchedWangId));
-            if (!foundWangs) {
+            if (!foundWangs || foundWangs.length == 0) {
                 console.log(`Faild to find wang tile at (${x + xPos},${y + yPos})`, Object.keys(terainNamesToTerainIndex).map(k => ({ name: k, value: terainNamesToTerainIndex[k] })).filter(x => searchedWangId.includes(x.value)).map(x => x.name))
                 return false;
             }
