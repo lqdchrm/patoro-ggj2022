@@ -15,8 +15,9 @@ import State from "./state.js";
 ////////////////////////////////////////////////////////////////////////////////
 
 
-function add_player_to_player_list(id)
+function add_player_to_player_list(player)
 {
+    var id = player.id
     var item = document.createElement('li');
     item.classList.add("move_done");
     item.textContent = id;
@@ -28,19 +29,24 @@ function add_player_to_player_list(id)
 
     item.appendChild(moves_info);
     uiPlayerList.appendChild(item);
+
+    update_moves_ui(player)
 }
 
-function remove_player_from_player_list(id)
+function remove_player_from_player_list(player)
 {
+    var id = player.id
     var player_list_entry = document.getElementById(id);
     uiPlayerList.removeChild(player_list_entry);
 }
 
-function update_moves_ui(id, number_of_moves_stored)
+function update_moves_ui(player)
 {
+    var id = player.id;
     var player_list_entry = document.getElementById(id);
     var moves_info = player_list_entry.lastChild;
-    moves_info.textContent = number_of_moves_stored + " moves left";
+    let moves_left = player.commands.length - viewModel.state.round - 1;
+    moves_info.textContent = moves_left + " moves left";
 
 }
 
@@ -89,17 +95,18 @@ let viewModel = new class ViewModel {
             moves.forEach(move => {
                 moveSprite(this.players[id].sprite, move);
             })
-            add_player_to_player_list(id);
+            add_player_to_player_list(player);
         });
 
         // remove old players
         let removedPlayers = Object.keys(this.state.players).filter(id => !serverState.players[id]);
         removedPlayers.forEach(id => {
-            if (this.players[id]) {
-                const localPlayer = this.players[id];
+            var player = this.players[id];
+            if (player) {
+                //remove_player_from_player_list(player);
+                const localPlayer = player;
                 localPlayer.sprite.remove();
                 delete this.players[id];
-                remove_player_from_player_list(id);
             }
         });
 
@@ -109,7 +116,7 @@ let viewModel = new class ViewModel {
             moves.forEach(move => {
                 moveSprite(this.players[player.id].sprite, move);
             });
-            update_moves_ui(player.id, moves.length);
+            update_moves_ui(player);
         });
 
         // store state
