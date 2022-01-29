@@ -13,7 +13,7 @@ export function addPlayer({ id, name }) {
     const newPlayer = {
         id,
         name,
-        commands: []
+        commands: state.round ? Array(state.round).fill("skip") : []
     };
 
     state.players[id] = newPlayer;
@@ -35,7 +35,6 @@ export function applyCommand({id, cmd}) {
 
 export function updateRound() {
     let round = Math.min(...Object.values(state.players).map(player => player.commands.length));
-    console.log(state.players, round);
     state.round = round;
     return state;
 }
