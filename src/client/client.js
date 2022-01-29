@@ -89,6 +89,7 @@ let viewModel = new class ViewModel {
         addedPlayers.forEach(id => {
             let spawnPoint =  {x: 3, y: 3};
             this.players[id] = {
+                id,
                 sprite: createSprite('robot', spawnPoint.x, spawnPoint.y, id),
             }
             let player = serverState.players[id];
@@ -104,7 +105,7 @@ let viewModel = new class ViewModel {
         removedPlayers.forEach(id => {
             var player = this.players[id];
             if (player) {
-                //remove_player_from_player_list(player);
+                remove_player_from_player_list(player);
                 const localPlayer = player;
                 localPlayer.sprite.remove();
                 delete this.players[id];
