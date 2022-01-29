@@ -46,7 +46,7 @@ export function applyCommand({id, cmd}) {
 
 function updateRound() {
     let live_players = Object.values(state.players).filter(p => p.diedInRound === null);
-    state.round = live_players.length ? Math.min(...live_players.map(player => player.commands.length)) : 0;
+    state.round = live_players.length > 0 ? Math.min(...live_players.map(player => player.commands.length)) : 0;
     return state;
 }
 
