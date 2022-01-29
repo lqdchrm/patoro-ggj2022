@@ -66,9 +66,10 @@ io.on('connection', (socket) => {
     });
 
     // handle command
-    socket.on('command', (cmd) => {
-        let state = State.applyCommand({id: socket.id, cmd});
-        io.emit('update', state);
+    socket.on('command', (cmds) => {
+        if (!Array.isArray(cmds)) cmds = [cmds];
+        cmds.forEach(cmd => State.applyCommand({id: socket.id, cmd}));
+        io.emit('update', State.getState());
     });
 
     // handle map
