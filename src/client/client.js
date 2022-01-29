@@ -51,18 +51,11 @@ class PlayerViewModel {
         let y = this.y;
 
         var movement = directionToVector(move);
-        console.log(x + " : " + y);
-        var new_player_position = {x: this.x + movement.x, y: this.y + movement.y};
-        console.log(new_player_position);
-        if (new_player_position.x >= 0
-            && new_player_position.x < map.width
-            && new_player_position.y >= 0
-            && new_player_position.y < map.height) {
-            x = new_player_position.x;
-            y = new_player_position.y;
+        x += movement.x;
+        y += movement.y;
+        if (x >= 0 && x < map.width && y >= 0 && y < map.height) {
+            setSpritePos(this.sprite, { x: x, y: y }, move ?? this.direction);
         }
-
-        setSpritePos(this.sprite, { x: x, y: y }, move ?? this.direction);
     }
 
 }
