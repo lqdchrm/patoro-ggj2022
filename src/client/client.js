@@ -332,7 +332,9 @@ let viewModel = new class ViewModel {
 
     updateUiPlayerList() {
         player_list.innerHTML = '';
-        Object.keys(this.state.players).forEach(player_id => {
+        var players = this.state.players;
+        var live_player_ids = Object.keys(players).filter(p_id => players[p_id].diedInRound === null);
+        live_player_ids.forEach(player_id => {
             var player = this.state.players[player_id];
 
             // add to list
