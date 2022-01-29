@@ -39,8 +39,6 @@ let viewModel = new class ViewModel {
     }
 
     async init() {
-        // state.map = await loadMap("orthogonal-outside", "./maps");
-        //state.map = await loadMap("samplemap","./maps/village");
         this.mapLoading = loadMap("killzone", "./maps/killzone");
         this.map = await this.mapLoading;
         await updateMap();
@@ -62,6 +60,11 @@ let viewModel = new class ViewModel {
             moves.forEach(move => {
                 moveSprite(this.players[id].sprite, move);
             })
+            var item = document.createElement('li');
+            item.classList.add("move_done");
+            item.textContent = id;
+            uiPlayerList.appendChild(item);
+  
         });
 
         // remove old players
@@ -106,9 +109,10 @@ let viewModel = new class ViewModel {
 var form = document.getElementById('form');
 var input = document.getElementById('input');
 
-var uiMessages = document.getElementById('messages');
-var uiUserId = document.getElementById('userId');
-var uiRound = document.getElementById('round');
+var uiMessages   = document.getElementById('messages');
+var uiUserId     = document.getElementById('userId');
+var uiRound      = document.getElementById('round');
+var uiPlayerList = document.getElementById('player_list');
 
 // chat input box
 form.addEventListener('submit', function (e) {

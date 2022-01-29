@@ -181,13 +181,13 @@ body>* {
     color: #fff;
 }
 
-#players {
+#player_list_div {
     margin-left:100px;
     border: white solid 1px;
     padding: 5px;
     width: 20%;
 }
-#players>ul {
+#player_list {
     list-style: none;
 }
 
