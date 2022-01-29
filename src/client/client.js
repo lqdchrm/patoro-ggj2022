@@ -218,12 +218,57 @@ let viewModel = new class ViewModel {
             return;
         }
         switch (move) {
+            case 'skip':
+                break;
             case 'left':
             case 'right':
             case 'up':
             case 'down':
                 this.players[player.id].move(move, map);
                 break;
+            case 'turn_right':
+                var sprite = this.players[player.id].sprite;
+                var direction = getSpriteDirection(this.players[player.id].sprite);
+                switch (direction) {
+                    case 'down':
+                        sprite.classList.remove('down');
+                        sprite.classList.add('left');
+                        break;
+                    case 'left':
+                        sprite.classList.remove('left');
+                        sprite.classList.add('up');
+                        break;
+                    case 'right':
+                        sprite.classList.remove('right');
+                        sprite.classList.add('down');
+                        break;
+                    case 'up':
+                        sprite.classList.remove('up');
+                        sprite.classList.add('right');
+                        break;
+                }
+                break;
+            case 'turn_left':
+                var sprite = this.players[player.id].sprite;
+                var direction = getSpriteDirection(this.players[player.id].sprite);
+                switch (direction) {
+                    case 'down':
+                        sprite.classList.remove('down');
+                        sprite.classList.add('right');
+                        break;
+                    case 'left':
+                        sprite.classList.remove('left');
+                        sprite.classList.add('down');
+                        break;
+                    case 'right':
+                        sprite.classList.remove('right');
+                        sprite.classList.add('up');
+                        break;
+                    case 'up':
+                        sprite.classList.remove('up');
+                        sprite.classList.add('left');
+                        break;
+                }
             case 'hole':
             case 'fill':
                 console.log("HOLE");
@@ -1073,10 +1118,8 @@ function directionToVector(direction) {
             return { x: -1, y: 0 };
         case 'right':
             return { x: 1, y: 0 };
-        case 'skip':
-            return { x: 0, y: 0 };
         default:
-            throw `Unknown direction ${direction}`
+            return { x: 0, y: 0 };
     }
 }
 /**
