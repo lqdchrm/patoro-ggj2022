@@ -150,6 +150,30 @@ let viewModel = new class ViewModel {
         this.updateMarker();
     }
 
+    updatePlayerNames() {
+        Object.values(this.state.players).filter(p => p.diedInRound === null).forEach(player => {
+            this.players[player.id].setName(player.name);
+        });
+    }
+
+    checkForMoveNotification() {
+        if (!this._hurryTimer) { this._hurryTimer = null; }
+        let playerWithoutMoves = Object.values(this.state.players).filter(p =>
+            (p.id !== socket.id) &&
+            (p.diedInRound === null) &&
+            (p.commands.length - this.state.round === 0)
+        );
+
+        if (playerWithoutMoves.length == 0 && this.commandBuffer.length == 0) {
+            if (!this._hurryTimer) {
+                this._hurryTimer = setTimeout(() => {
+                    showNotification("Hurry Up!!", 1500);
+                    this._hurryTimer = null;
+                 }, 10000);
+            }
+        }
+    }
+
     updateMarker() {
         const currentPlayer = this.players[socket.id];
         if (!this.markers) {
@@ -491,11 +515,6 @@ let viewModel = new class ViewModel {
             });
         }
 
-        // updateNames
-        allPlayers.forEach(player => {
-            this.players[player.id].setName(player.name);
-        });
-
         // store state
         this.state = serverState;
 
@@ -519,7 +538,8 @@ let viewModel = new class ViewModel {
     updateUi() {
         this.updateUiPlayerList();
         this.updateMarker();
-
+        this.updatePlayerNames();
+        this.checkForMoveNotification();
     }
 
     updateUiPlayerList() {
@@ -573,6 +593,21 @@ var uiBuffer = document.getElementById('buffer');
 var uiTimer = document.getElementById('timer');
 var player_list = document.getElementById('player_list_div');
 var toast = document.getElementById('toast');
+var toastTimer = null;
+
+function showNotification(text, duration = 1500) {
+    if (toastTimer) {
+        clearTimeout(toastTimer);
+        toastTimer = null;
+    }
+    if (text != null) {
+        toast.innerHTML = text;
+    }
+    toast.className = "show";
+    toastTimer = setTimeout(() => {
+        toast.className = "hide";
+    }, duration);
+}
 
 // chat input box
 form.addEventListener('submit', function (e) {
@@ -1266,10 +1301,10 @@ function createSprite(type, x, y, name, isMe, direction) {
 }
 
 /**
- * 
- * @param {HTMLDivElement} sprite 
- * @param {SpriteTypes} type 
- * @returns 
+ *
+ * @param {HTMLDivElement} sprite
+ * @param {SpriteTypes} type
+ * @returns
  */
 function setSpriteType(sprite, type) {
     if (sprite.classList.contains(type)) {
@@ -1362,8 +1397,7 @@ function setSpriteVisibility(sprite, visible) {
 //#region startup
 
 (async () => {
-    setTimeout(() => { toast.classList.remove("init"); toast.classList.add("show"); }, 2000);
-    setTimeout(() => toast.classList.remove("show"), 3000);
+    setTimeout(() => showNotification(null, 2000), 1000);
     await viewModel.init();
     connectToServer();
 })();
