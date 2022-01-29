@@ -252,11 +252,12 @@ async function updateMap() {
 
     // for all layers
     for (let l = 0; l < map.layers.length; ++l) {
-        if (map.layers[l].visible == false) continue;
-
         let layer = map.layers[l];
         let layerDiv = document.createElement("div");
         layerDiv.classList.add("layer");
+        if (map.layers[l].visible == false) {
+            layerDiv.classList.add("debug");
+        }
         uiMap.appendChild(layerDiv);
 
         let xPos = 0;
@@ -348,6 +349,10 @@ async function updateMap() {
 }
 
 
+// TODO: Delete, Its debug...
+window.setTerainBlock = setTerainBlock
+window.makeHole = makeHole
+
 
 /**
  * Make a holw in the floor
@@ -375,19 +380,209 @@ function makeHole(x, y) {
     const holeTileset = viewModel.map.tilesets.filter(x => x.name == "tileset")[0];
     const holeTilesetIndex = viewModel.map.tilesets.indexOf(holeTileset);
 
-
-    setMapImage(x, y, baseLayerIndex, holeTilesetIndex, 12);
+    const holeImageTileIndex = 12;
+    setMapImage(x, y, baseLayerIndex, holeTilesetIndex, holeImageTileIndex);
 
 
     //  visual layer hole = tileId: 12 tileset name :'tileset'
 
     // use terains?
 
+
+
+
     return true;
 
 }
 
-window.makeHole = makeHole;
+
+
+
+/**
+ * 
+ * @param {number} x the left upper corner of the terain
+ * @param {number} y the left upper corner of the terain
+ * @param {number} width the width to set (minimum 2)
+ * @param {*} height the height to set (minimum 2)
+ * @param {'floor'|'hole1'|'hole2'|'hole3'|'raised'} terain 
+ */
+function setTerainBlock(x, y, width, height, terain) {
+
+    if (width < 2 | height < 2) { // with corner only support we can't set a single tile
+        return false;
+    }
+    const tileset = viewModel.map.tilesets.filter(x => x.name == "tileset")[0];
+    const tilesetIndex = viewModel.map.tilesets.indexOf(tileset);
+    const terrain = tileset.terrains[0];
+    if (!terain) {
+        return false;
+    }
+
+
+
+    const terainNamesToTerainIndex = terrain.colors.reduce((obj, v, i) => {
+        obj[v.name] = i + 1/* one based index*/;
+        return obj;
+    }, {});
+    const terainIndex = terainNamesToTerainIndex[terain];
+    const baseLayer = viewModel.map.layers.filter(x => x.name == "base")[0];
+    const baseLayerIndex = viewModel.map.layers.indexOf(baseLayer);
+
+
+
+
+    // use terrains to handle neigborung tiles
+
+    const directionIndex = {
+        left: 6,
+        right: 2,
+        bottom: 4,
+        top: 0,
+        topleft: 7,
+        topright: 1,
+        bottomleft: 5,
+        bottomright: 3
+    }
+    if (terrain.type != 'corner') {
+        console.error('Currently only corner terrains are implemented');
+    }
+
+    function getWangId(x, y) {
+        const tuple = baseLayer.data[x + y * baseLayer.width];
+        if (!tuple) {
+            return undefined;
+        }
+        const [tilesetIndex, tileIndex] = tuple;
+        const wangTile = viewModel.map.tilesets[tilesetIndex].terrains[0]?.wangtiles.filter(x => x.tileid == tileIndex)[0];
+        return wangTile?.wangid;
+    }
+
+    function arrayEquals(a, b) {
+        return Array.isArray(a) &&
+            Array.isArray(b) &&
+            a.length === b.length &&
+            a.every((val, index) => val === b[index]);
+    }
+
+    const targetTileIds = [];
+
+    // EDGE logik...
+    // for (let yPos = 0; yPos < height; yPos++) {
+    //     for (let xPos = 0; xPos < width; xPos++) {
+
+    //         const searchedWangId = [0, 0, 0, 0, 0, 0, 0, 0]
+
+    //         if (xPos == 0 && x > 0) {
+    //             const wang = getWangId(x + xPos - 1, y + yPos);
+    //             if (wang) {
+    //                 searchedWangId[directionIndex.left] = wang[directionIndex.right];
+    //             } else {
+    //                 searchedWangId[directionIndex.left] = terainIndex;
+    //             }
+    //             searchedWangId[directionIndex.right] = terainIndex;
+    //         }
+    //         else if (xPos == width - 1 && x < baseLayer.width) {
+    //             const wang = getWangId(x + xPos + 1, y + yPos);
+    //             if (wang) {
+    //                 searchedWangId[directionIndex.right] = wang[directionIndex.left];
+    //             } else {
+    //                 searchedWangId[directionIndex.right] = terainIndex;
+    //             }
+    //             searchedWangId[directionIndex.left] = terainIndex;
+    //         } else {
+    //             searchedWangId[directionIndex.left] = terainIndex;
+    //             searchedWangId[directionIndex.right] = terainIndex;
+    //         }
+    //         if (yPos == 0 && y > 0) {
+    //             const wang = getWangId(x + xPos, y + yPos - 1);
+    //             if (wang) {
+    //                 searchedWangId[directionIndex.up] = wang[directionIndex.down];
+    //             } else {
+    //                 searchedWangId[directionIndex.up] = terainIndex;
+    //             }
+    //             searchedWangId[directionIndex.down] = terainIndex;
+    //         }
+    //         else if (yPos == height - 1 && y < baseLayer.height) {
+    //             const wang = getWangId(x + xPos, y + yPos + 1);
+    //             if (wang) {
+    //                 searchedWangId[directionIndex.down] = wang[directionIndex.up];
+    //             } else {
+    //                 searchedWangId[directionIndex.down] = terainIndex;
+    //             }
+    //             searchedWangId[directionIndex.up] = terainIndex;
+    //         } else {
+    //             searchedWangId[directionIndex.up] = terainIndex;
+    //             searchedWangId[directionIndex.down] = terainIndex;
+    //         }
+
+    //         const foundWang = terrain.wangtiles.filter(x => arrayEquals(x.wangid, searchedWangId))[0];
+    //         if (!foundWang) {
+    //             return false;
+    //         }
+
+    //         targetTileIds.push(foundWang.tileid);
+    //     }
+
+    for (let yPos = 0; yPos < height; yPos++) {
+        for (let xPos = 0; xPos < width; xPos++) {
+
+            const searchedWangId = [0, terainIndex, 0, terainIndex, 0, terainIndex, 0, terainIndex]
+
+            if (xPos == 0 && x > 0) {
+                const wang = getWangId(x + xPos - 1, y + yPos);
+                if (wang) {
+                    searchedWangId[directionIndex.topleft] = wang[directionIndex.topright];
+                    searchedWangId[directionIndex.bottomleft] = wang[directionIndex.bottomright];
+                }
+            }
+            else if (xPos == width - 1 && x < baseLayer.width) {
+                const wang = getWangId(x + xPos + 1, y + yPos);
+                if (wang) {
+                    searchedWangId[directionIndex.topright] = wang[directionIndex.topleft];
+                    searchedWangId[directionIndex.bottomright] = wang[directionIndex.bottomleft];
+                }
+            }
+
+            if (yPos == 0 && y > 0) {
+                const wang = getWangId(x + xPos, y + yPos - 1);
+                if (wang) {
+                    searchedWangId[directionIndex.topleft] = wang[directionIndex.bottomleft];
+                    searchedWangId[directionIndex.topright] = wang[directionIndex.bottomright];
+                }
+            }
+            else if (yPos == height - 1 && y < baseLayer.height) {
+                const wang = getWangId(x + xPos, y + yPos + 1);
+                if (wang) {
+                    searchedWangId[directionIndex.bottomleft] = wang[directionIndex.topleft];
+                    searchedWangId[directionIndex.bottomright] = wang[directionIndex.topright];
+                }
+            }
+
+
+            const foundWang = terrain.wangtiles.filter(x => arrayEquals(x.wangid, searchedWangId))[0];
+            if (!foundWang) {
+                return false;
+            }
+
+            targetTileIds.push(foundWang.tileid);
+        }
+    }
+
+
+    // we did not exit so everything should match.
+
+    for (let i = 0; i < targetTileIds.length; i++) {
+        const target = targetTileIds[i];
+        const destinationX = i % width + x;
+        const destinationY = Math.floor(i / width) + y;
+        setMapImage(destinationX, destinationY, baseLayerIndex, tilesetIndex, target);
+    }
+
+    return true;
+
+
+}
+
 
 function setMapImage(x, y, layerIndex, tilesetIndex, tilesetTileIndex) {
     const layer = viewModel.map.layers[layerIndex];
@@ -407,9 +602,9 @@ function setMapImage(x, y, layerIndex, tilesetIndex, tilesetTileIndex) {
     }
 
     // TODO: should it be changed? Or will this mess with incremental changes
+    //       I use the infos in the map, so it should reflect the correct state
     // change model
-    viewModel.map.layers[layerIndex].data[layerIndex] = tilesetTileIndex;
-
+    viewModel.map.layers[layerIndex].data[layerTileIndex] = [tilesetIndex, tilesetTileIndex];
 
 }
 
@@ -426,8 +621,8 @@ function getMapInfo(x, y) {
     const layerWidth = dataLayer.width;
     const index = x + y * layerWidth;
     const currentTile = array[index];
-    if (!currentTile) {
-        return 'empty';
+    if (!currentTile) { // 0 is not set tile
+        return 'floor';
     }
     const [tilesetIndex, tileIndex] = currentTile;
     // should only be one tileset in this layer but we check it...
@@ -443,7 +638,7 @@ function getMapInfo(x, y) {
 
         default:
             console.error('Tileindex undefined', tileIndex);
-            return 'empty';
+            return 'floor';
     }
 
 

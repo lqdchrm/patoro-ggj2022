@@ -100,11 +100,18 @@ body>* {
     position: absolute;
     display: block;
     z-index: calc(var(--layer) * var(--v-tiles) * 2 * var(--tileHeight) + var(--y) *2);
-    background-position-x: calc(-1px * var(--tileset-x)  * var(--tileWidth) );
-    background-position-y: calc(-1px * var(--tileset-y)  * var(--tileHeight) );
+    background-position-x: calc(-1px * var(--tileset-x) * var(--tileWidth));
+    background-position-y: calc(-1px * var(--tileset-y) * var(--tileHeight));
 }
 
+#map .layer.debug {
+    display: none;
+}
 
+*[debug] .layer.debug,
+*[debug-data] .layer.debug {
+    display: block !important;
+}
 
 /*******************************************************************************
  ██████╗██╗  ██╗ █████╗ ████████╗
@@ -120,7 +127,7 @@ body>* {
     width: 40%;
     height: calc(100% - 8px);
     font-size: small;
-    background: rgba(0,0,0,0.35);
+    background: rgba(0, 0, 0, 0.35);
     position: absolute;
     top: 0;
     left: calc(16px - 40%);
