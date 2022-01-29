@@ -115,11 +115,11 @@ let viewModel = new class ViewModel {
         }
     }
     */
-    fire_laser() {
+    fire() {
         if (this.commandBuffer.length < 3) {
-            this.commandBuffer.push('fire_laser');
-            this.commandBuffer.push('fire_laser');
-            this.commandBuffer.push('fire_laser');
+            this.commandBuffer.push('fire');
+            this.commandBuffer.push('fire');
+            this.commandBuffer.push('fire');
             if (this.commandBuffer.length == 5) {
                 socket.emit("command", this.commandBuffer);
             }
@@ -417,7 +417,7 @@ let viewModel = new class ViewModel {
                         setTerainBlock(...param, 'hole2');
                 }
                 break;
-            case 'fire_laser':
+            case 'fire':
                 local_player.laser_loading += 1;
                 if (local_player.laser_loading == 3) {
                     local_player.laser_loading = 0;
@@ -511,7 +511,7 @@ let viewModel = new class ViewModel {
         switch (cmd) {
             case 'undo': this.undo(); break;
             case 'commit': this.commit(); break;
-            case 'fire_laser': this.fire_laser(); break;
+            case 'fire': this.fire(); break;
             default: throw new Error("Unknown uiAction");
         }
     }
