@@ -167,14 +167,21 @@ let viewModel = new class ViewModel {
                     const direction = getSpriteDirection(playerData.sprite);
                     let holeSize;
                     const vector = directionToVector(direction);
-                    const pos = [vector.x * 2 + playerData.x, vector.y * 2 + playerData.y];
+                    const pos = [vector.x + playerData.x, vector.y + playerData.y];
                     if (direction == "down" || direction == 'up') {
                         holeSize = [3, 2]
                         pos[0] -= 1;
+                        if (direction == 'up') {
+                            pos[1] -= 1;
+                        }
                     }
                     else if (direction == 'left' || direction == 'right') {
                         holeSize = [2, 3]
                         pos[1] -= 1;
+                        if (direction == 'left') {
+                            pos[0] -= 1;
+                        }
+
                     }
                     else {
                         holeSize = [0, 0]
@@ -185,7 +192,7 @@ let viewModel = new class ViewModel {
 
                     const param = [...pos, ...holeSize];
 
-                    if(move== 'fill')
+                    if (move == 'fill')
                         setTerainBlock(...param, 'floor');
                     else
                         setTerainBlock(...param, 'hole2');
@@ -213,7 +220,7 @@ let viewModel = new class ViewModel {
 
         let start = new Promise((res) => { res(0); });
 
-        for(let round = this.state.round; round < serverState.round; ++round) {
+        for (let round = this.state.round; round < serverState.round; ++round) {
             start = start.then((step) => {
                 return new Promise((res, rej) => {
                     try {
@@ -466,6 +473,12 @@ async function updateMap() {
     uiActors = actorLayerDiv;
 
     const animationNames = {}
+
+    const markerDiv = document.createElement("div");
+    markerDiv.classList.add("marker");
+
+
+    uiMap.appendChild(markerDiv);
 
     // for all layers
     for (let l = 0; l < map.layers.length; ++l) {
