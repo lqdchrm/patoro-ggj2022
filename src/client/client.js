@@ -70,7 +70,9 @@ let viewModel = new class ViewModel {
         this.players = {};              // local playerViewModels holding the sprite
 
         this.commandBuffer = [];
-        this.timer = setTimeout(() => { this.move("skip"); }, 1000);
+        this.bufferTimer = null;
+        this.uiTimer = null;
+        this.uiTimerValue = null;
 
         /**@type {TileMap} */
         this.map = {};
@@ -83,18 +85,31 @@ let viewModel = new class ViewModel {
     async init() {
         this.map = await loadMap("killzone", "./maps/killzone");
         await updateMap();
+        this.resetTimer();
+    }
+
+    resetTimer() {
+        clearTimeout(this.bufferTimer);
+        clearInterval(this.uiTimer);
+        this.uiTimerValue = 10;
+        this.uiTimer = setInterval(() => {
+            this.uiTimerValue -= 1;
+        }, 1000);
+        this.bufferTimer = setTimeout(() => {
+            if (this.commandBuffer.length < 5 ) {
+                let cmds = Array(5-this.commandBuffer.length).fill('skip');
+                cmds.forEach(cmd => this.move(cmd));
+            }
+        }, 10000);
     }
 
     move(command) {
-        if (this.commandBuffer.length > 4) {
+        this.commandBuffer.push(command);
+        if (this.commandBuffer.length >= 5) {
+            this.resetTimer();
             socket.emit("command", this.commandBuffer);
             this.commandBuffer.splice(0, this.commandBuffer.length);
-        } else {
-            this.commandBuffer.push(command);
-            console.log(this.commandBuffer);
         }
-        clearTimeout(this.timer);
-        this.timer = setTimeout(() => { this.move("skip"); }, 1000);
     }
 
     calcSpawnPoint(id) {
@@ -261,6 +276,7 @@ var uiMessages      = document.getElementById('messages');
 var uiUserId        = document.getElementById('userId');
 var uiRound         = document.getElementById('round');
 var uiBuffer        = document.getElementById('buffer');
+var uiTimer         = document.getElementById('timer');
 var player_list     = document.getElementById('player_list');
 
 // chat input box
@@ -311,6 +327,9 @@ viewModel = new Proxy(viewModel, {
                 break;
             case 'state':
                 uiRound.textContent = value.round;
+                break;
+            case 'uiTimerValue':
+                uiTimer.textContent = value;
                 break;
         }
         return true;
