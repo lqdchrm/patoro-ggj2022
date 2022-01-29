@@ -209,8 +209,9 @@ let viewModel = new class ViewModel {
         removedPlayers.forEach(id => this.removePlayer(id));
 
         // update moves
+        let allPlayers = Object.keys(serverState.players).sort().map(id => serverState.players[id]);
         for(let round = this.state.round; round < serverState.round; ++round) {
-            Object.values(serverState.players).forEach(player => {
+            allPlayers.forEach(player => {
                 let move = player.commands[round];
                 this.handleMove(viewModel.map, player, move);
             });
