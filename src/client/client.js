@@ -202,7 +202,6 @@ let viewModel = new class ViewModel {
 
 var form              = document.getElementById('form');
 var input             = document.getElementById('input');
-var name_change_form  = document.getElementById('name_change_form');
 var name_change_input = document.getElementById('name_change_input');
 
 var uiMessages      = document.getElementById('messages');
@@ -217,14 +216,10 @@ form.addEventListener('submit', function (e) {
         socket.emit('chat message', input.value);
         input.value = '';
     }
-});
 
-// chat input box
-name_change_form.addEventListener('submit', function (e) {
-    e.preventDefault();
     if (name_change_input.value) {
         socket.emit('name change message', name_change_input.value);
-        input.value = '';
+        name_change_input.value = '';
     }
 });
 
