@@ -17,21 +17,9 @@ async function loadTileset(folder, input) {
     if (tileset.wangsets) {
 
         terrains = [...tileset.wangsets];
-        terrains = terrains.map((t, i) => {
-            const modifiedColors = t.colors.map(x => {
-
-                const newObj = { ...x };
-                newObj.properties = arrayToObjectByProp(x.properties);
-                return newObj;
-
-
-            });
-            const changedTerrain = { ...t, id: i + 1, index: i, colorsByName: arrayToObjectByProp(modifiedColors) };
-            changedTerrain.colors = modifiedColors;
-            return changedTerrain;
-        })
+        terrains = terrains.map((t, i) => ({ ...t, id: i + 1, index: i, colorsByName: arrayToObjectByProp(t.colors) }))
     }
-    return {
+    return replaceProperty({
         imgPath,
         name: tileset.name,
         imageWidth: tileset.imagewidth,
@@ -41,7 +29,7 @@ async function loadTileset(folder, input) {
         tileHeight: tileset.tileheight,
         tiles: tileset.tiles?.reduce((obj, v) => { obj[v.id] = v; return obj }, {}) ?? {},
         terrains,
-    }
+    })
 
 }
 
@@ -67,23 +55,64 @@ function arrayToObjectByProp(array, prop = "name") {
     }, {}) ?? {};
 }
 
+function replaceProperty(obj) {
+    if (obj == undefined) {
+        return obj;
+    } else if (Array.isArray(obj)) {
+
+        return obj.map(x => replaceProperty(x));
+    } else if (typeof obj != "object") {
+        return obj;
+    }
+    const newObj = { ...obj };
+    if (typeof obj.properties == 'object') {
+        newObj.properties = arrayToObjectByProp(obj.properties);
+    }
+
+    for (const key in newObj) {
+        if (Object.hasOwnProperty.call(newObj, key)) {
+            const element = newObj[key];
+            newObj[key] = replaceProperty(element);
+        }
+    }
+    return newObj;
+
+}
+
 export async function loadMap(mapname, folder) {
 
     let response = await fetch(`${folder}/${mapname}.json`);
     let data = await response.json();
 
+    /**@type{Tileset[]} */
     let tilesets = await Promise.all(
         data.tilesets.map(
             (input) => loadTileset(folder, input)
         )
     );
+    /**@type{Record<TilesetNames,Tileset>} */
     let tilesetsByName = arrayToObjectByProp(tilesets);
 
-    let layers = data.layers.map(layer => updateIndex(data, layer));
+    /**@type {Layer} */
+    let layers = replaceProperty( data.layers.map(layer => updateIndex(data, layer)));
+    /**@type {Record<LayerNames, Layer>} */
     let layersByName = arrayToObjectByProp(layers);
+
+    /**@type {Record<string, Property>} */
     let properties = arrayToObjectByProp(data?.properties);
 
-    let spawnPoints = [];
+
+    const spawnTiles = Object.values(tilesetsByName['tileset_data'].tiles).filter(x => x.properties['type']?.value == "spawn");
+
+    const spawnPoints = spawnTiles.flatMap(tile => {
+        const dataLayer = layersByName['data'];
+        const spawnIdices = dataLayer.data.map((tileMapping, i) => ({ isSpawnPoint: tileMapping ? tileMapping[1] == tile.id : false, index: i }))
+            .filter(x => x.isSpawnPoint)
+            .map(x => x.index);
+
+        return spawnIdices.map(s => ({ x: s % dataLayer.width, y: Math.floor(s / dataLayer.width) }));
+
+    })
 
     return {
         height: data.height,
