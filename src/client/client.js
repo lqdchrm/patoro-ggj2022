@@ -209,18 +209,33 @@ let viewModel = new class ViewModel {
         removedPlayers.forEach(id => this.removePlayer(id));
 
         // update moves
+        let allPlayers = Object.keys(serverState.players).sort().map(id => serverState.players[id]);
+
+        let start = new Promise((res) => { res(0); });
+
         for(let round = this.state.round; round < serverState.round; ++round) {
-            Object.values(serverState.players).forEach(player => {
-                let move = player.commands[round];
-                this.handleMove(viewModel.map, player, move);
+            start = start.then((step) => {
+                return new Promise((res, rej) => {
+                    try {
+                        allPlayers.forEach(player => {
+                            let move = player.commands[round];
+                            this.handleMove(viewModel.map, player, move);
+                        });
+                        setTimeout(() => res(step + 1), 500);
+                    } catch (err) {
+                        rej(err);
+                    }
+                });
             });
         }
 
-        // store state
-        this.state = serverState;
+        start.then(() => {
+            // store state
+            this.state = serverState;
 
-        // update UI
-        this.updateUi();
+            // update UI
+            this.updateUi();
+        });
     }
 
     uiAction(cmd) {
