@@ -71,6 +71,7 @@ let viewModel = new class ViewModel {
         this.commandBuffer = [];
         this.timer = null;
         this.timerValue = null;
+        this.fireballList = [];
 
         /**@type {TileMap} */
         this.map = {};
@@ -401,6 +402,13 @@ let viewModel = new class ViewModel {
                     local_player.laser_loading = 0;
                     var fireball = createSprite("fireball", local_player.x, local_player.y);
                     setSpriteVisibility(fireball, true);
+                    var x = Number(fireball.style.getPropertyValue('--x'));
+                    var y = Number(fireball.style.getPropertyValue('--y'));
+                    var direction = getSpriteDirection(local_player.sprite);
+                    var move = directionToVector(direction);
+                    var new_position = {x: x + move.x, y: y + move.y};
+                    setSpritePos(fireball, new_position, direction);
+                    viewModel.fireballList.push(fireball);
                 }
                 break;
             case 'skip':
@@ -444,6 +452,23 @@ let viewModel = new class ViewModel {
 
                 if (player.diedInRound !== null) {
                     this.players[player.id].sprite.classList.add("dead");
+                }
+            });
+            viewModel.fireballList.forEach((fireball, index, list) => {
+                var x = Number(fireball.style.getPropertyValue('--x'));
+                var y = Number(fireball.style.getPropertyValue('--y'));
+                var direction = getSpriteDirection(fireball);
+                var move = directionToVector(direction);
+                var new_position = {x: x+move.x, y: y+move.y};
+                if (new_position.x < 0 || new_position.x > viewModel.map.width - 1
+                    || new_position.y < 0 || new_position.y > viewModel.map.height - 1)
+                {
+                    list.splice(index, 1);
+                    fireball.remove();
+                }
+                else
+                {
+                    setSpritePos(fireball, new_position);
                 }
             });
         }
