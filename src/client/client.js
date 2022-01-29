@@ -92,8 +92,8 @@ let viewModel = new class ViewModel {
         this.timer = setInterval(() => {
             this.timerValue -= 1;
             if (this.timerValue <= 0) {
-                if (this.commandBuffer.length < 5 ) {
-                    let cmds = Array(5-this.commandBuffer.length).fill('skip');
+                if (this.commandBuffer.length < 5) {
+                    let cmds = Array(5 - this.commandBuffer.length).fill('skip');
                     cmds.forEach(cmd => this.move(cmd));
                 }
                 this.timerValue = 10;
@@ -105,7 +105,7 @@ let viewModel = new class ViewModel {
 
     undo() {
         if (this.commandBuffer.length) {
-            this.commandBuffer.splice(this.commandBuffer.length-1, 1);
+            this.commandBuffer.splice(this.commandBuffer.length - 1, 1);
         }
     }
 
@@ -148,15 +148,14 @@ let viewModel = new class ViewModel {
         var tile = getDataLayerInfo(local_player.x, local_player.y);
         if (tile == 'fall') {
             local_player.falling_counter += 1;
-            if (local_player.falling_counter == 3)
-            {
+            if (local_player.falling_counter == 3) {
                 local_player.falling_counter = 0;
                 var new_spawn = this.calcSpawnPoint(local_player.id);
                 setSpritePos(local_player.sprite, { x: new_spawn.x, y: new_spawn.y }, move ?? local_player.direction);
             }
             return;
         }
-        switch(move) {
+        switch (move) {
             case 'left':
             case 'right':
             case 'up':
@@ -190,10 +189,10 @@ let viewModel = new class ViewModel {
                     const param = [...pos, ...holeSize];
 
                     //TODO: undo holes...
-                    if(move== 'fill')
-                    setTerainBlock(...param, 'floor');
+                    if (move == 'fill')
+                        setTerainBlock(...param, 'floor');
                     else
-                    setTerainBlock(...param, 'hole2') 
+                        setTerainBlock(...param, 'hole2')
                 }
                 break;
             case 'skip':
@@ -227,7 +226,7 @@ let viewModel = new class ViewModel {
     }
 
     uiAction(cmd) {
-        switch(cmd) {
+        switch (cmd) {
             case 'undo': this.undo(); break;
             default: throw new Error("Unknown uiAction");
         }
@@ -281,12 +280,12 @@ var form = document.getElementById('form');
 var input = document.getElementById('input');
 var name_change_input = document.getElementById('name_change_input');
 
-var uiMessages      = document.getElementById('messages');
-var uiUserId        = document.getElementById('userId');
-var uiRound         = document.getElementById('round');
-var uiBuffer        = document.getElementById('buffer');
-var uiTimer         = document.getElementById('timer');
-var player_list     = document.getElementById('player_list');
+var uiMessages = document.getElementById('messages');
+var uiUserId = document.getElementById('userId');
+var uiRound = document.getElementById('round');
+var uiBuffer = document.getElementById('buffer');
+var uiTimer = document.getElementById('timer');
+var player_list = document.getElementById('player_list');
 
 // chat input box
 form.addEventListener('submit', function (e) {
