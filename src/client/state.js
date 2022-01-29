@@ -2,7 +2,8 @@ const state = {
     "round": 0,
     "players": {
 
-    }
+    },
+    "map": null
 }
 
 export function getState() {
@@ -33,9 +34,16 @@ export function applyCommand({id, cmd}) {
     return updateRound();
 }
 
-export function updateRound() {
+function updateRound() {
     let players = Object.values(state.players);
     state.round = players.length ? Math.min(...players.map(player => player.commands.length)) : 0;
+    return state;
+}
+
+export function setMap(map) {
+    if (!state.map) {
+        state.map = map;
+    }
     return state;
 }
 
@@ -43,5 +51,6 @@ export default {
     getState,
     addPlayer,
     removePlayer,
-    applyCommand
+    applyCommand,
+    setMap
 }

@@ -70,6 +70,7 @@ let viewModel = new class ViewModel {
     async init() {
         this.mapLoading = loadMap("killzone", "./maps/killzone");
         this.map = await this.mapLoading;
+        socket.emit('map', this.map.serverInfo);
         await updateMap();
     }
 
@@ -387,8 +388,8 @@ window.makeHole = makeHole
 
 /**
  * Make a holw in the floor
- * @param {number} x 
- * @param {number} y 
+ * @param {number} x
+ * @param {number} y
  * @returns returns if the map has now a hole in that direction
  */
 function makeHole(x, y) {
@@ -430,12 +431,12 @@ function makeHole(x, y) {
 
 
 /**
- * 
+ *
  * @param {number} x the left upper corner of the terain
  * @param {number} y the left upper corner of the terain
  * @param {number} width the width to set (minimum 2)
  * @param {*} height the height to set (minimum 2)
- * @param {'floor'|'hole1'|'hole2'|'hole3'|'raised'} terain 
+ * @param {'floor'|'hole1'|'hole2'|'hole3'|'raised'} terain
  */
 function setTerainBlock(x, y, width, height, terain) {
 
@@ -585,9 +586,9 @@ function setMapImage(x, y, layerIndex, tilesetIndex, tilesetTileIndex) {
 
 
 /**
- * 
- * @param {number} x 
- * @param {number} y 
+ *
+ * @param {number} x
+ * @param {number} y
  * @returns A value coresponding tho the datalyer
  */
 function getDataLayerInfo(x, y) {
