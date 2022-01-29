@@ -249,11 +249,30 @@ let viewModel = new class ViewModel {
                 case 'hole':
                 case 'fill':
                     {
-                        usedDigs++;
-                        setSpriteVisibility(this.markers[usedDigs], true)
                         const direction = getDirectionsFromCommands(index - 1);
                         const translate = directionToVector(direction);
-                        setSpritePos(this.markers[usedDigs], { x: vector.x + translate.x, y: vector.y + translate.y }, direction)
+                        const digPosition = { x: vector.x + translate.x, y: vector.y + translate.y };
+
+                        usedDigs++;
+                        if (this.markers.length <= usedDigs) {
+                            this.markers.push(createSprite(c == 'hole' ? 'cursor-dig' : 'cursor-fill', digPosition.x, digPosition.y, undefined, false, direction))
+                        }
+                        let candig = true;
+
+                        if (direction == 'up') {
+                            candig = setTerainBlock(digPosition.x - 1, digPosition.y - 1, 3, 2, c == 'hole' ? 'hole2' : 'floor', true)
+                        } else if (direction == 'down') {
+                            candig = setTerainBlock(digPosition.x - 1, digPosition.y, 3, 2, c == 'hole' ? 'hole2' : 'floor', true)
+                        } else if (direction == 'left') {
+                            candig = setTerainBlock(digPosition.x - 1, digPosition.y - 1, 3, 2, c == 'hole' ? 'hole2' : 'floor', true)
+                        } else if (direction == 'right') {
+                            candig = setTerainBlock(digPosition.x, digPosition.y - 1, 3, 2, c == 'hole' ? 'hole2' : 'floor', true)
+
+                        }
+
+                        setSpritePos(this.markers[usedDigs], digPosition, direction)
+                        setSpriteType(this.markers[usedDigs], !candig ? 'cursor-error' : c == 'hole' ? 'cursor-dig' : 'cursor-fill')
+                        setSpriteVisibility(this.markers[usedDigs], true)
                     }
                     break;
                 default:
@@ -412,9 +431,6 @@ let viewModel = new class ViewModel {
                     setSpritePos(fireball, new_position, direction);
                     viewModel.fireballList.push(fireball);
                 }
-                break;
-            case 'skip':
-                /* no-op */
                 break;
             default:
                 throw new Error("Unknown move");
@@ -884,8 +900,9 @@ function makeHole(x, y) {
  * @param {number} width the width to set (minimum 2)
  * @param {*} height the height to set (minimum 2)
  * @param {'floor'|'hole1'|'hole2'|'hole3'|'raised'} terrainName
+ * @param test Just test if it can be set, do not perform the operation
  */
-function setTerainBlock(x, y, width, height, terrainName) {
+function setTerainBlock(x, y, width, height, terrainName, test = false) {
 
     if (width < 2 | height < 2) { // with corner only support we can't set a single tile
         return false;
@@ -1011,76 +1028,81 @@ function setTerainBlock(x, y, width, height, terrainName) {
 
 
     // we did not exit so everything should match.
+    if (!test) {
 
-    for (let i = 0; i < targetTileIds.length; i++) {
-        const target = targetTileIds[i];
-        const destinationX = i % width + x;
-        const destinationY = Math.floor(i / width) + y;
-        setMapImage(destinationX, destinationY, baseLayerIndex, tilesetIndex, target.tileid);
-        const fallDirections = {
-            none: 0,
-            topleft: 1,
-            topright: 2,
-            bottomleft: 4,
-            bottomright: 8,
-            top: 1 + 2,
-            left: 1 + 4,
-            right: 2 + 8,
-            bottom: 4 + 8,
-            all: 1 + 2 + 4 + 8
+        for (let i = 0; i < targetTileIds.length; i++) {
+            const target = targetTileIds[i];
+            const destinationX = i % width + x;
+            const destinationY = Math.floor(i / width) + y;
+            setMapImage(destinationX, destinationY, baseLayerIndex, tilesetIndex, target.tileid);
+            const fallDirections = {
+                none: 0,
+                topleft: 1,
+                topright: 2,
+                bottomleft: 4,
+                bottomright: 8,
+                top: 1 + 2,
+                left: 1 + 4,
+                right: 2 + 8,
+                bottom: 4 + 8,
+                all: 1 + 2 + 4 + 8
+            }
+
+
+
+
+
+            const fallDirection = target.details.map((x, i) => {
+                if (!terrain.colors[x - 1]) {
+                    return fallDirections.none;
+                }
+
+                if (!terrain.colors[x - 1].properties) {
+                    return fallDirections.none;
+                }
+
+                if (!terrain.colors[x - 1].properties['hole']?.value) {
+                    return fallDirections.none;
+                }
+
+                else if (i == directionIndex.topleft) {
+                    return fallDirections.topleft;
+                }
+                else if (i == directionIndex.topright) {
+                    return fallDirections.topright;
+                }
+                else if (i == directionIndex.bottomleft) {
+                    return fallDirections.bottomleft;
+                }
+                else if (i == directionIndex.bottomright) {
+                    return fallDirections.bottomright;
+                }
+                else {
+                    return fallDirections.none;
+                }
+            }).reduce((o, n) => o + n, 0);
+
+            /**
+             * @type {Datatypes}
+             * */
+            let newDataState = 'none';
+
+            if (fallDirection != fallDirections.none) {
+                newDataState = 'fall';
+            }
+
+            setDataLayer(destinationX, destinationY, newDataState);
+
         }
-
-
-
-
-
-        const fallDirection = target.details.map((x, i) => {
-            if (!terrain.colors[x - 1]) {
-                return fallDirections.none;
-            }
-
-            if (!terrain.colors[x - 1].properties) {
-                return fallDirections.none;
-            }
-
-            if (!terrain.colors[x - 1].properties['hole']?.value) {
-                return fallDirections.none;
-            }
-
-            else if (i == directionIndex.topleft) {
-                return fallDirections.topleft;
-            }
-            else if (i == directionIndex.topright) {
-                return fallDirections.topright;
-            }
-            else if (i == directionIndex.bottomleft) {
-                return fallDirections.bottomleft;
-            }
-            else if (i == directionIndex.bottomright) {
-                return fallDirections.bottomright;
-            }
-            else {
-                return fallDirections.none;
-            }
-        }).reduce((o, n) => o + n, 0);
-
-        /**
-         * @type {Datatypes}
-         * */
-        let newDataState = 'none';
-
-        if (fallDirection != fallDirections.none) {
-            newDataState = 'fall';
-        }
-
-        setDataLayer(destinationX, destinationY, newDataState);
-
     }
 
     return true;
 
 
 }
+
+
+
 
 /**
  *
@@ -1217,7 +1239,7 @@ function getDataLayerInfo(x, y) {
 
 /**
  *
- * @param {'man'|'robot'|'cursor'|'cursor-dig'} type
+ * @param {SpriteTypes} type
  * @param {number} x
  * @param {number} y
  * @param {string|undefined} name
@@ -1228,8 +1250,6 @@ function createSprite(type, x, y, name, isMe, direction) {
     const spriteDiv = document.createElement("div");
     spriteDiv.style.setProperty('--x', x);
     spriteDiv.style.setProperty('--y', y);
-    //spriteDiv.style.setProperty('--sprite-width', width);
-    //spriteDiv.style.setProperty('--sprite-height', height);
     if (name) {
         spriteDiv.style.setProperty('--name', `'${name}'`);
     }
@@ -1243,6 +1263,21 @@ function createSprite(type, x, y, name, isMe, direction) {
     }
     uiActors.appendChild(spriteDiv);
     return spriteDiv;
+}
+
+/**
+ * 
+ * @param {HTMLDivElement} sprite 
+ * @param {SpriteTypes} type 
+ * @returns 
+ */
+function setSpriteType(sprite, type) {
+    if (sprite.classList.contains(type)) {
+        return;
+    }
+    sprite.classList.remove([...sprite.classList].filter(x => !['up', 'right', 'left', 'down', 'hide', 'dead', 'sprite', 'me'].includes(x)))
+    sprite.classList.add(type);
+
 }
 
 function directionToVector(direction) {

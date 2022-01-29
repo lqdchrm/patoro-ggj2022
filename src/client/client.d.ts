@@ -76,3 +76,5 @@ type TileMap = {
         y: number,
     }[]
 }
+
+type SpriteTypes = 'man' | 'robot' | 'cursor' | 'cursor-dig'| 'cursor-fill'| 'cursor-error';
