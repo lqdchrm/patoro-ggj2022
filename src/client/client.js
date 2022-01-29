@@ -450,17 +450,15 @@ let viewModel = new class ViewModel {
             var player = this.state.players[player_id];
 
             // add to list
-            var item = document.createElement('li');
+            var item = document.createElement('div');
             item.classList.add("move_done");
-            item.textContent = player.name;
             item.id = player.id;
 
-            // write moves
-            var moves_info = document.createElement('span');
-            moves_info.classList.add("pull_right");
             let moves_left = player.commands.length - this.state.round;
-            moves_info.textContent = moves_left + " moves left";
-            item.appendChild(moves_info);
+            item.innerHTML = `
+                <span>${player.name}:</span>
+                <span>${moves_left} moves ahead</span>
+            `;
 
             // append to dom
             player_list.appendChild(item);
@@ -493,7 +491,7 @@ var uiUserId = document.getElementById('userId');
 var uiRound = document.getElementById('round');
 var uiBuffer = document.getElementById('buffer');
 var uiTimer = document.getElementById('timer');
-var player_list = document.getElementById('player_list');
+var player_list = document.getElementById('player_list_div');
 
 // chat input box
 form.addEventListener('submit', function (e) {

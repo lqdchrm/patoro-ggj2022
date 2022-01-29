@@ -8,17 +8,14 @@
   </head>
   <body>
     <div class="topbar">
-        <div>User ID: <span id="userId"></span></div>
-        <div>Round: <span id="round"></span></div>
-        <div>Buffer: <span id="buffer"></span></div>
-        <div>Timer: <span id="timer"></span></div>
-    </div>
 
-    <div id="main">
-        <div class="scrollbox" style="z-index: 1;">
-            <div id="map"></div>
+        <div id="stats">
+            <div>User ID: <span id="userId"></span></div>
+            <div>Round: <span id="round"></span></div>
+            <div>Buffer: <span id="buffer"></span></div>
+            <div>Timer: <span id="timer"></span></div>
         </div>
-        <ul id="messages" class="scrollbox" style="z-index: 2;"></ul>
+
         <div id="controls" class="ui">
             <button id="left" class="command">LEFT</button>
             <button id="right" class="command">RIGHT</button>
@@ -31,11 +28,19 @@
             <button id="turn_right" class="command">turn right</button>
             <button id="undo" class="uiCommand">UNDO</button>
         </div>
+
+        <div class="spacer"></div>
+
         <div id="player_list_div" class="ui">
-            <p>Players:</p>
-            <ul id="player_list">
-            </ul>
+            <div id="player_list"></div>
         </div>
+    </div>
+
+    <div id="main">
+        <div class="scrollbox" style="z-index: 1;">
+            <div id="map"></div>
+        </div>
+        <ul id="messages" class="scrollbox" style="z-index: 2;"></ul>
     </div>
 
     <form id="form" action="">

@@ -49,12 +49,40 @@ body>* {
    ╚═╝    ╚═════╝ ╚═╝     ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝
 *******************************************************************************/
 .topbar {
+    position: relative;
     width: 100vw;
     background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: flex-start;
 }
 
-.topbar>* {
+.topbar > * {
+    position: relative;
+    flex: 0 1 auto;
     display: block;
+}
+
+#stats {
+    width: 300px;
+}
+
+#player_list_div {
+    flex: 0 1 auto;
+    justify-self: flex-end;
+}
+
+.spacer {
+    flex: 1 1 auto;
+}
+
+.move_done {
+    color: green;
+}
+
+.waiting {
+    color: red;
 }
 
 /*******************************************************************************
@@ -66,15 +94,11 @@ body>* {
  ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚══════╝
 *******************************************************************************/
 .ui {
-    position: absolute;
     z-index: 3;
 }
 
 #controls {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 20%;
+    align-self: center;
 }
 
 /*******************************************************************************
@@ -191,29 +215,6 @@ body>* {
     border-radius: 3px;
     outline: none;
     color: #fff;
-}
-
-#player_list_div {
-    position: absolute;
-    margin-left:100px;
-    border: white solid 1px;
-    padding: 5px;
-    width: 20%;
-}
-#player_list {
-    list-style: none;
-}
-
-.move_done {
-    color: green;
-}
-
-.waiting {
-    color: red;
-}
-
-.pull_right {
-    float: right;
 }
 
 /*******************************************************************************
