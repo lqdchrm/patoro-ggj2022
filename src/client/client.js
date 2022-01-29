@@ -37,6 +37,11 @@ class PlayerViewModel {
         this.renderPromise = Promise.resolve();
     }
 
+    setName(name) {
+        this.name = name;
+        this.sprite.style.setProperty('--name', `'${this.name}'`);
+    }
+
     get x() { return +this.sprite.style.getPropertyValue('--x'); }
 
     get y() { return +this.sprite.style.getPropertyValue('--y'); }
@@ -450,7 +455,7 @@ let viewModel = new class ViewModel {
 
         // updateNames
         allPlayers.forEach(player => {
-            this.players[player.id].sprite.style.setProperty('--name', `'${player.name}'`);
+            this.players[player.id].setName(player.name);
         });
 
         // store state
@@ -539,6 +544,7 @@ form.addEventListener('submit', function (e) {
     }
 
     if (name_change_input.value) {
+        localStorage.setItem("playerName", name_change_input.value);
         socket.emit('name change message', name_change_input.value);
         name_change_input.value = '';
     }
@@ -627,6 +633,11 @@ function connectToServer() {
         console.log(`[IO] Connected`);
         viewModel.id = socket.id;
         viewModel.messages.push(`Connected to Server`);
+
+        let name = localStorage.getItem("playerName");
+        if (name) {
+            socket.emit("name change message", name);
+        }
     });
 
     // on disconnect
