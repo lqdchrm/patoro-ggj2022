@@ -361,7 +361,7 @@ window.makeHole = makeHole
  * @returns returns if the map has now a hole in that direction
  */
 function makeHole(x, y) {
-    if (getMapInfo(x, y) == "hole") {
+    if (getDataLayerInfo(x, y) == "hole") {
         return true;
     }
     // The hole has index 1 in data layer
@@ -466,63 +466,6 @@ function setTerainBlock(x, y, width, height, terain) {
 
     const targetTileIds = [];
 
-    // EDGE logik...
-    // for (let yPos = 0; yPos < height; yPos++) {
-    //     for (let xPos = 0; xPos < width; xPos++) {
-
-    //         const searchedWangId = [0, 0, 0, 0, 0, 0, 0, 0]
-
-    //         if (xPos == 0 && x > 0) {
-    //             const wang = getWangId(x + xPos - 1, y + yPos);
-    //             if (wang) {
-    //                 searchedWangId[directionIndex.left] = wang[directionIndex.right];
-    //             } else {
-    //                 searchedWangId[directionIndex.left] = terainIndex;
-    //             }
-    //             searchedWangId[directionIndex.right] = terainIndex;
-    //         }
-    //         else if (xPos == width - 1 && x < baseLayer.width) {
-    //             const wang = getWangId(x + xPos + 1, y + yPos);
-    //             if (wang) {
-    //                 searchedWangId[directionIndex.right] = wang[directionIndex.left];
-    //             } else {
-    //                 searchedWangId[directionIndex.right] = terainIndex;
-    //             }
-    //             searchedWangId[directionIndex.left] = terainIndex;
-    //         } else {
-    //             searchedWangId[directionIndex.left] = terainIndex;
-    //             searchedWangId[directionIndex.right] = terainIndex;
-    //         }
-    //         if (yPos == 0 && y > 0) {
-    //             const wang = getWangId(x + xPos, y + yPos - 1);
-    //             if (wang) {
-    //                 searchedWangId[directionIndex.up] = wang[directionIndex.down];
-    //             } else {
-    //                 searchedWangId[directionIndex.up] = terainIndex;
-    //             }
-    //             searchedWangId[directionIndex.down] = terainIndex;
-    //         }
-    //         else if (yPos == height - 1 && y < baseLayer.height) {
-    //             const wang = getWangId(x + xPos, y + yPos + 1);
-    //             if (wang) {
-    //                 searchedWangId[directionIndex.down] = wang[directionIndex.up];
-    //             } else {
-    //                 searchedWangId[directionIndex.down] = terainIndex;
-    //             }
-    //             searchedWangId[directionIndex.up] = terainIndex;
-    //         } else {
-    //             searchedWangId[directionIndex.up] = terainIndex;
-    //             searchedWangId[directionIndex.down] = terainIndex;
-    //         }
-
-    //         const foundWang = terrain.wangtiles.filter(x => arrayEquals(x.wangid, searchedWangId))[0];
-    //         if (!foundWang) {
-    //             return false;
-    //         }
-
-    //         targetTileIds.push(foundWang.tileid);
-    //     }
-
     for (let yPos = 0; yPos < height; yPos++) {
         for (let xPos = 0; xPos < width; xPos++) {
 
@@ -561,6 +504,7 @@ function setTerainBlock(x, y, width, height, terain) {
 
             const foundWang = terrain.wangtiles.filter(x => arrayEquals(x.wangid, searchedWangId))[0];
             if (!foundWang) {
+                console.log(`Faild to find wang tile at (${x + xPos},${y + yPos})`, Object.keys(terainNamesToTerainIndex).map(k => ({ name: k, value: terainNamesToTerainIndex[k] })).filter(x => searchedWangId.includes(x.value)).map(x => x.name))
                 return false;
             }
 
@@ -613,9 +557,9 @@ function setMapImage(x, y, layerIndex, tilesetIndex, tilesetTileIndex) {
  * 
  * @param {number} x 
  * @param {number} y 
- * @returns 
+ * @returns A value coresponding tho the datalyer
  */
-function getMapInfo(x, y) {
+function getDataLayerInfo(x, y) {
     const dataLayer = viewModel.map.layers[viewModel.map.layers.length - 1];
     const array = dataLayer.data;
     const layerWidth = dataLayer.width;

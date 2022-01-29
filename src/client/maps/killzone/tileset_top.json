@@ -10,5 +10,73 @@
  "tileheight":32,
  "tilewidth":32,
  "type":"tileset",
- "version":"1.6"
+ "version":"1.6",
+ "wangsets":[
+        {
+         "colors":[
+                {
+                 "color":"#ff0000",
+                 "name":"redlight",
+                 "probability":1,
+                 "tile":-1
+                }, 
+                {
+                 "color":"#02fbff",
+                 "name":"bluelight",
+                 "probability":1,
+                 "tile":61
+                }],
+         "name":"Unnamed Set",
+         "tile":-1,
+         "type":"edge",
+         "wangtiles":[
+                {
+                 "tileid":40,
+                 "wangid":[0, 0, 0, 0, 1, 0, 0, 0]
+                }, 
+                {
+                 "tileid":47,
+                 "wangid":[0, 0, 0, 0, 2, 0, 0, 0]
+                }, 
+                {
+                 "tileid":48,
+                 "wangid":[1, 0, 0, 0, 1, 0, 0, 0]
+                }, 
+                {
+                 "tileid":55,
+                 "wangid":[2, 0, 0, 0, 2, 0, 0, 0]
+                }, 
+                {
+                 "tileid":56,
+                 "wangid":[1, 0, 0, 0, 0, 0, 0, 0]
+                }, 
+                {
+                 "tileid":57,
+                 "wangid":[0, 0, 1, 0, 0, 0, 0, 0]
+                }, 
+                {
+                 "tileid":58,
+                 "wangid":[0, 0, 1, 0, 0, 0, 1, 0]
+                }, 
+                {
+                 "tileid":59,
+                 "wangid":[0, 0, 0, 0, 0, 0, 1, 0]
+                }, 
+                {
+                 "tileid":60,
+                 "wangid":[0, 0, 2, 0, 0, 0, 0, 0]
+                }, 
+                {
+                 "tileid":61,
+                 "wangid":[0, 0, 2, 0, 0, 0, 2, 0]
+                }, 
+                {
+                 "tileid":62,
+                 "wangid":[0, 0, 0, 0, 0, 0, 2, 0]
+                }, 
+                {
+                 "tileid":63,
+                 "wangid":[2, 0, 0, 0, 0, 0, 0, 0]
+                }]
+        }]
 }
