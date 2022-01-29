@@ -31,7 +31,6 @@ const io = new Server(httpServer);
 
 // socket.io setup
 io.on('connection', (socket) => {
-    let user;
 
     // user connected
     console.log(`[IO] <${socket.id}> a user connected`);
@@ -50,7 +49,6 @@ io.on('connection', (socket) => {
         console.log(`[IO] <${socket.id}> a user disconnected: ${reason}`);
         let msg = `User <${socket.id}> disconnected: ${reason}`;
         socket.broadcast.emit('chat message', { from: socket.id, msg });
-        socket.broadcast.emit('left', { from: socket.id, user: user });
         let state = State.removePlayer(socket.id);
         io.emit('update', state);
     });
