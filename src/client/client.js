@@ -308,6 +308,11 @@ let viewModel = new class ViewModel {
             });
         }
 
+        // updateNames
+        allPlayers.forEach(player => {
+            this.players[player.id].sprite.style.setProperty('--name', `'${player.name}'`);
+        });
+
         // store state
         this.state = serverState;
 
@@ -1048,7 +1053,7 @@ function createSprite(type, x, y, name, isMe) {
     spriteDiv.style.setProperty('--x', x);
     spriteDiv.style.setProperty('--y', y);
     if (name) {
-        spriteDiv.style.setProperty('--name', name);
+        spriteDiv.style.setProperty('--name', `'${name}'`);
     }
     spriteDiv.classList.add('sprite');
     spriteDiv.classList.add(type);
