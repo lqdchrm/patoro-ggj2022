@@ -15,9 +15,6 @@ import State from "./state.js";
 ////////////////////////////////////////////////////////////////////////////////
 
 
-
-
-
 ////////////////////////////////////////////////////////////////////////////////
 // ██╗   ██╗██╗███████╗██╗    ██╗███╗   ███╗ ██████╗ ██████╗ ███████╗██╗
 // ██║   ██║██║██╔════╝██║    ██║████╗ ████║██╔═══██╗██╔══██╗██╔════╝██║
@@ -534,6 +531,7 @@ var uiRound = document.getElementById('round');
 var uiBuffer = document.getElementById('buffer');
 var uiTimer = document.getElementById('timer');
 var player_list = document.getElementById('player_list_div');
+var toast = document.getElementById('toast');
 
 // chat input box
 form.addEventListener('submit', function (e) {
@@ -1304,6 +1302,8 @@ function setSpriteVisibility(sprite, visible) {
 //#region startup
 
 (async () => {
+    setTimeout(() => { toast.classList.remove("init"); toast.classList.add("show"); }, 2000);
+    setTimeout(() => toast.classList.remove("show"), 3000);
     await viewModel.init();
     connectToServer();
 })();
