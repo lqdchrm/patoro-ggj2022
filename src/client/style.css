@@ -11,6 +11,15 @@ body {
     position: absolute;
 }
 
+@keyframes move-bg {
+    0% {
+        background-position: 0px 0px;
+    }
+    100% {
+        background-position: -1024px -1024px;
+    }
+}
+
 body {
     background: black;
     color: #ccc;
@@ -55,7 +64,7 @@ body>* {
     display: flex;
     flex-direction: row;
     align-items: stretch;
-    justify-content: space-between;
+    justify-content: flex-start;
 }
 
 .topbar > * {
@@ -64,8 +73,17 @@ body>* {
     display: block;
 }
 
+#stats {
+    width: 300px;
+}
+
 #player_list_div {
     flex: 0 1 auto;
+    justify-self: flex-end;
+}
+
+.spacer {
+    flex: 1 1 auto;
 }
 
 .move_done {
@@ -109,6 +127,8 @@ body>* {
     align-self: center;
     margin-left: 50%;
     transform: translateX(-50%);
+    background: url(bg/starfield.jpg) repeat;
+    animation: move-bg 180s linear infinite;
 }
 
 #map .layer {
