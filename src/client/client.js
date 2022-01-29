@@ -75,6 +75,7 @@ let viewModel = new class ViewModel {
         this.players = {};              // local players view model holding the sprite
 
         this.mapLoading = null;         // promise to wait for loading finish
+        /**@type{TileMap} */
         this.map = {};
 
         this.messages = [];             // chat
@@ -93,7 +94,7 @@ let viewModel = new class ViewModel {
     }
 
     calcSpawnPoint(id) {
-        let spawnPoints = [{ x: 3, y: 3 }, { x: 3, y: 31 }, { x: 36, y: 3 }, { x: 36, y: 31 }];
+        let spawnPoints = this.map.spawnPoints;
 
         // sum of chars
         let spawnPoint = spawnPoints[[...id].reduce((acc, c) => {

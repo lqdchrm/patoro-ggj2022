@@ -42,3 +42,19 @@ type Property = {
     type: string,
     value: any
 }
+
+type TileMap = {
+    height: number
+    width: number
+    tileWidth: number
+    tileHeight: number
+    tilesets: Tileset[]
+    tilesetsByName: Record<TilesetNames, Tileset>
+    layers: Layer
+    layersByName: Record<LayerNames, Layer>
+    properties: Record<string, Property>,
+    spawnPoints: {
+        x: number,
+        y: number,
+    }[]
+}
