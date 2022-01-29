@@ -15,12 +15,11 @@ import State from "./state.js";
 ////////////////////////////////////////////////////////////////////////////////
 
 
-function add_player_to_player_list(player)
+function add_player_to_player_list(id, name)
 {
-    var id = player.id
     var item = document.createElement('li');
     item.classList.add("move_done");
-    item.textContent = id;
+    item.textContent = name;
     item.id = id;
 
     var moves_info = document.createElement('span');
@@ -93,7 +92,7 @@ let viewModel = new class ViewModel {
             moves.forEach(move => {
                 moveSprite(this.players[id].sprite, move);
             })
-            add_player_to_player_list(player);
+            add_player_to_player_list(id, player.name);
         });
 
         // remove old players
@@ -138,8 +137,9 @@ let viewModel = new class ViewModel {
 //  ╚═════╝ ╚═╝    ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝
 //#region UI Handlers
 
-var form = document.getElementById('form');
-var input = document.getElementById('input');
+var form       = document.getElementById('form');
+var input      = document.getElementById('input');
+var name_input = document.getElementById('name_input');
 
 var uiMessages   = document.getElementById('messages');
 var uiUserId     = document.getElementById('userId');
@@ -151,6 +151,15 @@ form.addEventListener('submit', function (e) {
     e.preventDefault();
     if (input.value) {
         socket.emit('chat message', input.value);
+        input.value = '';
+    }
+});
+
+// chat input box
+form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (input.value) {
+        socket.emit('name change message', input.value);
         input.value = '';
     }
 });
