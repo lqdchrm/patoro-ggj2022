@@ -15,40 +15,8 @@ import State from "./state.js";
 ////////////////////////////////////////////////////////////////////////////////
 
 
-function add_player_to_player_list(player)
-{
-    var id = player.id
-    var item = document.createElement('li');
-    item.classList.add("move_done");
-    item.textContent = id;
-    item.id = id;
 
-    var moves_info = document.createElement('span');
-    moves_info.classList.add("pull_right");
-    moves_info.textContent = 0 +" moves left";
 
-    item.appendChild(moves_info);
-    uiPlayerList.appendChild(item);
-
-    update_moves_ui(player)
-}
-
-function remove_player_from_player_list(player)
-{
-    var id = player.id
-    var player_list_entry = document.getElementById(id);
-    uiPlayerList.removeChild(player_list_entry);
-}
-
-function update_moves_ui(player)
-{
-    var id = player.id;
-    var player_list_entry = document.getElementById(id);
-    var moves_info = player_list_entry.lastChild;
-    let moves_left = player.commands.length - viewModel.state.round - 1;
-    moves_info.textContent = moves_left + " moves left";
-
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 // ██╗   ██╗██╗███████╗██╗    ██╗███╗   ███╗ ██████╗ ██████╗ ███████╗██╗
@@ -105,13 +73,11 @@ let viewModel = new class ViewModel {
         moves.forEach(move => {
             moveSprite(this.players[id].sprite, move);
         })
-        add_player_to_player_list(player);
     }
 
     removePlayer(id) {
         var player = this.players[id];
         if (player) {
-            remove_player_from_player_list(player);
             const localPlayer = player;
             localPlayer.sprite.remove();
             delete this.players[id];
@@ -133,11 +99,40 @@ let viewModel = new class ViewModel {
             moves.forEach(move => {
                 moveSprite(this.players[player.id].sprite, move);
             });
-            update_moves_ui(player);
         });
 
         // store state
         this.state = serverState;
+
+        // update UI
+        this.updateUi();
+    }
+
+    updateUi() {
+        this.updateUiPlayerList();
+    }
+
+    updateUiPlayerList() {
+        player_list.innerHTML = '';
+        Object.keys(this.state.players).forEach(player_id => {
+            var player = this.state.players[player_id];
+
+            // add to list
+            var item = document.createElement('li');
+            item.classList.add("move_done");
+            item.textContent = player.name;
+            item.id = player.id;
+
+            // write moves
+            var moves_info = document.createElement('span');
+            moves_info.classList.add("pull_right");
+            let moves_left = player.commands.length - this.state.round;
+            moves_info.textContent = moves_left + " moves left";
+            item.appendChild(moves_info);
+
+            // append to dom
+            player_list.appendChild(item);
+        });
     }
 };
 
@@ -157,19 +152,31 @@ let viewModel = new class ViewModel {
 //  ╚═════╝ ╚═╝    ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝
 //#region UI Handlers
 
-var form = document.getElementById('form');
-var input = document.getElementById('input');
+var form              = document.getElementById('form');
+var input             = document.getElementById('input');
+var name_change_form  = document.getElementById('name_change_form');
+var name_change_input = document.getElementById('name_change_input');
 
-var uiMessages   = document.getElementById('messages');
-var uiUserId     = document.getElementById('userId');
-var uiRound      = document.getElementById('round');
-var uiPlayerList = document.getElementById('player_list');
+var uiMessages      = document.getElementById('messages');
+var uiUserId        = document.getElementById('userId');
+var uiRound         = document.getElementById('round');
+var player_list_div = document.getElementById('player_list_div');
+var player_list     = document.getElementById('player_list');
 
 // chat input box
 form.addEventListener('submit', function (e) {
     e.preventDefault();
     if (input.value) {
         socket.emit('chat message', input.value);
+        input.value = '';
+    }
+});
+
+// chat input box
+name_change_form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (name_change_input.value) {
+        socket.emit('name change message', name_change_input.value);
         input.value = '';
     }
 });
@@ -259,6 +266,7 @@ socket.on('chat message', function ({ from, msg }) {
 });
 
 socket.on('update', (serverState) => {
+    console.log("[SERVER STATE]: ", serverState);
     viewModel.update(serverState);
     console.log("[STATE]: ", viewModel.state);
 })
