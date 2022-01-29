@@ -15,9 +15,6 @@ import State from "./state.js";
 ////////////////////////////////////////////////////////////////////////////////
 
 
-
-
-
 ////////////////////////////////////////////////////////////////////////////////
 // ██╗   ██╗██╗███████╗██╗    ██╗███╗   ███╗ ██████╗ ██████╗ ███████╗██╗
 // ██║   ██║██║██╔════╝██║    ██║████╗ ████║██╔═══██╗██╔══██╗██╔════╝██║
@@ -35,6 +32,11 @@ class PlayerViewModel {
 
         this.sprite = createSprite('robot', this.spawnPoint.x, this.spawnPoint.y, id, id === socket.id);
         this.renderPromise = Promise.resolve();
+    }
+
+    setName(name) {
+        this.name = name;
+        this.sprite.style.setProperty('--name', `'${this.name}'`);
     }
 
     get x() { return +this.sprite.style.getPropertyValue('--x'); }
@@ -71,6 +73,7 @@ let viewModel = new class ViewModel {
         this.commandBuffer = [];
         this.timer = null;
         this.timerValue = null;
+        this.fireballList = [];
 
         /**@type {TileMap} */
         this.map = {};
@@ -117,6 +120,9 @@ let viewModel = new class ViewModel {
             this.commandBuffer.push('fire_laser');
             this.commandBuffer.push('fire_laser');
             this.commandBuffer.push('fire_laser');
+            if (this.commandBuffer.length == 5) {
+                socket.emit("command", this.commandBuffer);
+            }
         }
     }
 
@@ -417,6 +423,13 @@ let viewModel = new class ViewModel {
                     local_player.laser_loading = 0;
                     var fireball = createSprite("fireball", local_player.x, local_player.y);
                     setSpriteVisibility(fireball, true);
+                    var x = Number(fireball.style.getPropertyValue('--x'));
+                    var y = Number(fireball.style.getPropertyValue('--y'));
+                    var direction = getSpriteDirection(local_player.sprite);
+                    var move = directionToVector(direction);
+                    var new_position = {x: x + move.x, y: y + move.y};
+                    setSpritePos(fireball, new_position, direction);
+                    viewModel.fireballList.push(fireball);
                 }
                 break;
             default:
@@ -459,11 +472,28 @@ let viewModel = new class ViewModel {
                     this.players[player.id].sprite.classList.add("dead");
                 }
             });
+            viewModel.fireballList.forEach((fireball, index, list) => {
+                var x = Number(fireball.style.getPropertyValue('--x'));
+                var y = Number(fireball.style.getPropertyValue('--y'));
+                var direction = getSpriteDirection(fireball);
+                var move = directionToVector(direction);
+                var new_position = {x: x+move.x, y: y+move.y};
+                if (new_position.x < 0 || new_position.x > viewModel.map.width - 1
+                    || new_position.y < 0 || new_position.y > viewModel.map.height - 1)
+                {
+                    list.splice(index, 1);
+                    fireball.remove();
+                }
+                else
+                {
+                    setSpritePos(fireball, new_position);
+                }
+            });
         }
 
         // updateNames
         allPlayers.forEach(player => {
-            this.players[player.id].sprite.style.setProperty('--name', `'${player.name}'`);
+            this.players[player.id].setName(player.name);
         });
 
         // store state
@@ -542,6 +572,7 @@ var uiRound = document.getElementById('round');
 var uiBuffer = document.getElementById('buffer');
 var uiTimer = document.getElementById('timer');
 var player_list = document.getElementById('player_list_div');
+var toast = document.getElementById('toast');
 
 // chat input box
 form.addEventListener('submit', function (e) {
@@ -552,6 +583,7 @@ form.addEventListener('submit', function (e) {
     }
 
     if (name_change_input.value) {
+        localStorage.setItem("playerName", name_change_input.value);
         socket.emit('name change message', name_change_input.value);
         name_change_input.value = '';
     }
@@ -640,6 +672,11 @@ function connectToServer() {
         console.log(`[IO] Connected`);
         viewModel.id = socket.id;
         viewModel.messages.push(`Connected to Server`);
+
+        let name = localStorage.getItem("playerName");
+        if (name) {
+            socket.emit("name change message", name);
+        }
     });
 
     // on disconnect
@@ -1325,6 +1362,8 @@ function setSpriteVisibility(sprite, visible) {
 //#region startup
 
 (async () => {
+    setTimeout(() => { toast.classList.remove("init"); toast.classList.add("show"); }, 2000);
+    setTimeout(() => toast.classList.remove("show"), 3000);
     await viewModel.init();
     connectToServer();
 })();
