@@ -118,6 +118,9 @@ let viewModel = new class ViewModel {
             this.commandBuffer.push('fire_laser');
             this.commandBuffer.push('fire_laser');
             this.commandBuffer.push('fire_laser');
+            if (this.commandBuffer.length == 5) {
+                socket.emit("command", this.commandBuffer);
+            }
         }
     }
 
