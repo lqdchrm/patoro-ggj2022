@@ -8,10 +8,15 @@
   </head>
   <body>
     <div class="topbar">
-        <div>User ID: <span id="userId"></span></div>
-        <div>Round: <span id="round"></span></div>
-        <div>Buffer: <span id="buffer"></span></div>
-        <div>Timer: <span id="timer"></span></div>
+        <div id="stats">
+            <div>User ID: <span id="userId"></span></div>
+            <div>Round: <span id="round"></span></div>
+            <div>Buffer: <span id="buffer"></span></div>
+            <div>Timer: <span id="timer"></span></div>
+        </div>
+        <div id="player_list_div" class="ui">
+            <div id="player_list"></div>
+        </div>
     </div>
 
     <div id="main">
@@ -30,11 +35,6 @@
             <button id="turn_left" class="command">turn left</button>
             <button id="turn_right" class="command">turn right</button>
             <button id="undo" class="uiCommand">UNDO</button>
-        </div>
-        <div id="player_list_div" class="ui">
-            <p>Players:</p>
-            <ul id="player_list">
-            </ul>
         </div>
     </div>
 
