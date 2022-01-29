@@ -146,8 +146,8 @@ body>* {
     transform: translate(-50%, -50%);
     width: 50%;
     height: 50%;
-    border-radius: 20%;
-    animation: player-glow ease-in-out 3s infinite;
+    border-radius: 50%;
+    animation: player-glow ease-in-out 2s infinite;
 }
 
 /*******************************************************************************
