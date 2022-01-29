@@ -696,7 +696,7 @@ function setDataLayer(x, y, value) {
  * @param {number} x 
  * @param {number} y 
  * @param {number|'data'|'deco'|'base'} layerIndex 
- * @param {number |'tileset'|'tileset_data'|'tileset_top'|undefined} tilesetIndex 
+ * @param {number | TilesetNames|undefined} tilesetIndex 
  * @param {number} tilesetTileIndex 
  */
 function setMapImage(x, y, layerIndex, tilesetIndex, tilesetTileIndex) {
