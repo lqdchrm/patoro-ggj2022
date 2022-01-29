@@ -29,6 +29,7 @@ import State from "./state.js";
 class PlayerViewModel {
     constructor(id, spawnPoint) {
         this.id = id;
+        this.falling_counter = 0;
         this.spawnPoint = spawnPoint;
         this.sprite = createSprite('robot', this.spawnPoint.x, this.spawnPoint.y, id, id === socket.id);
     }
@@ -55,12 +56,6 @@ class PlayerViewModel {
         x += movement.x;
         y += movement.y;
         if (x >= 0 && x < map.width && y >= 0 && y < map.height) {
-            var tile = getDataLayerInfo(x, y);
-            if (tile == 'fall') {
-                var new_spawn = viewModel.calcSpawnPoint(this.id);
-                x = new_spawn.x;
-                y = new_spawn.y;
-            }
             setSpritePos(this.sprite, { x: x, y: y }, move ?? this.direction);
         }
     }
@@ -120,6 +115,18 @@ let viewModel = new class ViewModel {
     }
 
     handleMove(map, player, move) {
+        var local_player = this.players[player.id];
+        var tile = getDataLayerInfo(local_player.x, local_player.y);
+        if (tile == 'fall') {
+            local_player.falling_counter += 1;
+            if (local_player.falling_counter == 3)
+            {
+                local_player.falling_counter = 0;
+                var new_spawn = this.calcSpawnPoint(local_player.id);
+                setSpritePos(local_player.sprite, { x: new_spawn.x, y: new_spawn.y }, move ?? local_player.direction);
+            }
+            return;
+        }
         switch(move) {
             case 'left':
             case 'right':
