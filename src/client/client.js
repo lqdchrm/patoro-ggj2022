@@ -14,6 +14,8 @@ import State from "./state.js";
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
 
+const COMMAND_BUFFER_LENGTH = 1;
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // ██╗   ██╗██╗███████╗██╗    ██╗███╗   ███╗ ██████╗ ██████╗ ███████╗██╗
@@ -108,35 +110,7 @@ let viewModel = new class ViewModel {
     async init() {
         this.map = await loadMap("gannter", "./maps/killzone");
         await updateMap();
-
-        //this.startTimer();
     }
-
-    /*
-    startTimer() {
-        let running = this.timer != null;
-        if (!running) {
-            this.timerValue = 10;
-            this.timer = setInterval(() => {
-                this.timerValue -= 1;
-                if (this.timerValue <= 0) {
-                    if (this.commandBuffer.length < 5) {
-                        let cmds = Array(5 - this.commandBuffer.length).fill('skip');
-                        cmds.forEach(cmd => this.move(cmd));
-                    }
-                    socket.emit("command", this.commandBuffer);
-                    this.commandBuffer.splice(0, this.commandBuffer.length);
-                    if (running) {
-                        this.startTimer();
-                    } else {
-                        clearInterval(this.timer);
-                        this.timer = null;
-                    }
-                }
-            }, 1000);
-        }
-    }
-    */
 
     undo() {
         if (this.commandBuffer.length) {
@@ -146,7 +120,7 @@ let viewModel = new class ViewModel {
     }
 
     commit() {
-        while (this.commandBuffer.length < 5) {
+        while (this.commandBuffer.length < COMMAND_BUFFER_LENGTH) {
             this.commandBuffer.push('skip');
         }
         socket.emit("command", this.commandBuffer);
@@ -156,7 +130,7 @@ let viewModel = new class ViewModel {
 
     move(command) {
         this.commandBuffer.push(command);
-        if (this.commandBuffer.length == 5) {
+        if (this.commandBuffer.length == COMMAND_BUFFER_LENGTH) {
             socket.emit("command", this.commandBuffer);
             this.commandBuffer.splice(0, this.commandBuffer.length);
         }
@@ -492,10 +466,6 @@ let viewModel = new class ViewModel {
             });
         }
 
-        // remove old players
-        // let removedPlayers = Object.keys(this.state.players).filter(id => !serverState.players[id]).sort();
-        // removedPlayers.forEach(id => this.removePlayer(id));
-
         // update moves
         let allPlayers = Object.keys(serverState.players).sort().map(id => serverState.players[id]);
 
@@ -544,8 +514,6 @@ let viewModel = new class ViewModel {
 
         // update UI
         this.updateUi();
-
-        //this.startTimer();
     }
 
     uiAction(cmd) {
