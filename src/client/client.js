@@ -247,10 +247,10 @@ let viewModel = new class ViewModel {
             const c = commands[index];
 
             /**
-             * 
-             * @param {SpriteTypes} type 
-             * @param {{x:number,y:number}} position 
-             * @param {Direction} direction 
+             *
+             * @param {SpriteTypes} type
+             * @param {{x:number,y:number}} position
+             * @param {Direction} direction
              * @param {boolean} searchfromback searchess the last index
              */
 
@@ -1561,8 +1561,13 @@ function setSpriteVisibility(sprite, visible) {
     await viewModel.init();
     connectToServer();
     setInterval(() => {
-        if (theBigMessageBuffer.length > 0) {
+        let round = theBigMessageBuffer.length ? theBigMessageBuffer[0].data.round : -1;
+        while(theBigMessageBuffer.length) {
             var message = theBigMessageBuffer.shift();
+
+            if (message.data.round > round)
+                break;
+
             console.log("processing " + message.type + ". Messages left: " + theBigMessageBuffer.length + " messages");
             processMessages(message);
             console.log("done");
