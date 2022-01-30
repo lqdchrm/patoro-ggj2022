@@ -144,24 +144,24 @@ let viewModel = new class ViewModel {
     }
 
     checkForMoveNotification() {
-        if (!this._hurryTimer) { this._hurryTimer = null; }
-        let players = Object.values(this.state.players);
-        if (players.length > 1) {
-            let playerWithoutMoves = players.filter(p =>
-                (p.id !== socket.id) &&
-                (p.diedInRound === null) &&
-                (p.commands.length - this.state.round === 0)
-            );
+        // if (!this._hurryTimer) { this._hurryTimer = null; }
+        // let players = Object.values(this.state.players);
+        // if (players.length > 1) {
+        //     let playerWithoutMoves = players.filter(p =>
+        //         (p.id !== socket.id) &&
+        //         (p.diedInRound === null) &&
+        //         (p.commands.length - this.state.round === 0)
+        //     );
 
-            if (playerWithoutMoves.length == 0 && this.commandBuffer.length == 0) {
-                if (!this._hurryTimer) {
-                    this._hurryTimer = setTimeout(() => {
-                        showNotification("Hurry Up!!", 1500);
-                        this._hurryTimer = null;
-                    }, 10000);
-                }
-            }
-        }
+        //     if (playerWithoutMoves.length == 0 && this.commandBuffer.length == 0) {
+        //         if (!this._hurryTimer) {
+        //             this._hurryTimer = setTimeout(() => {
+        //                 showNotification("Hurry Up!!", 1500);
+        //                 this._hurryTimer = null;
+        //             }, 10000);
+        //         }
+        //     }
+        // }
     }
 
     updateMarker() {
@@ -744,7 +744,9 @@ function connectToServer() {
 
     // handle chat messages
     socket.on('chat message', function ({ from, msg }) {
-        viewModel.messages.push(`${from}: ${msg}`);
+        let text = `${from}: ${msg}`;
+        viewModel.messages.push(text);
+        showNotification(text, 1000);
     });
 
     socket.on('update', (serverState) => {
@@ -1270,7 +1272,10 @@ function getDataLayerInfo(x, y) {
     }
     const [, tileIndex] = currentTile;
 
-    const property = datatileset.tiles[tileIndex].properties;
+    const property = datatileset.tiles[tileIndex]?.properties;
+    if(!property){
+        return 'none'
+    }
     const type = property['type']?.value;
 
     switch (type) {
