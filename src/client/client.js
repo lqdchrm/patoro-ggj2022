@@ -760,11 +760,26 @@ viewModel.commandBuffer = new Proxy(viewModel.commandBuffer, {
 //#region Socket Handlers
 let socket = null;
 
+var theBigMessageBuffer = [];
+
 function connectToServer() {
     socket = io();
+    socket.onAny((message, ...args) => {
+        console.log("received " + message);
+        theBigMessageBuffer.push({type:message, data:args[0]});
+    });
+}
 
+function processMessages(msg)
+{
+    var type    = msg.type;
+    var message = msg.data;
+
+    console.log(`[IO] Received ${type} ${message}: `);
+    switch (type) {
     // on connect
-    socket.on('connect', () => {
+    case 'connect':
+    {
         console.log(`[IO] Connected`);
         viewModel.id = socket.id;
         viewModel.messages.push(`Connected to Server`);
@@ -773,35 +788,76 @@ function connectToServer() {
         if (name) {
             socket.emit("name change message", name);
         }
-    });
+    } break;
 
     // on disconnect
-    socket.on('disconnect', (reason) => {
+    case 'disconnect':
+    {
         console.log(`[IO] Disconnected: ${reason}`);
         viewModel.messages.push(`Disconnected from Server: ${reason}`);
         if (reason === "io server disconnect") {
             // the disconnection was initiated by the server, you need to reconnect manually
             socket.connect();
         }
-    });
+    } break;
 
     // log everything
-    socket.onAny((message, ...args) => {
-        console.log(`[IO] Received ${message}: `, ...args);
-    });
-
     // handle chat messages
-    socket.on('chat message', function ({ from, msg }) {
+    case 'chat message': {
+        var [from, msg] = message;
         let text = `${from}: ${msg}`;
         viewModel.messages.push(text);
         showNotification(text, 1000);
-    });
+    } break;
 
-    socket.on('update', (serverState) => {
+    case 'update': {
+        var serverState = message;
         console.log("[SERVER STATE]: ", serverState);
         viewModel.update(serverState);
         console.log("[STATE]: ", viewModel.state);
-    })
+    } break;
+    }
+
+//    // on connect
+//    socket.on('connect', () => {
+//        console.log(`[IO] Connected`);
+//        viewModel.id = socket.id;
+//        viewModel.messages.push(`Connected to Server`);
+//
+//        let name = localStorage.getItem("playerName");
+//        if (name) {
+//            socket.emit("name change message", name);
+//        }
+//    });
+//    }
+//
+//    // on disconnect
+//    socket.on('disconnect', (reason) => {
+//        console.log(`[IO] Disconnected: ${reason}`);
+//        viewModel.messages.push(`Disconnected from Server: ${reason}`);
+//        if (reason === "io server disconnect") {
+//            // the disconnection was initiated by the server, you need to reconnect manually
+//            socket.connect();
+//        }
+//    });
+//
+//    // log everything
+//    socket.onAny((message, ...args) => {
+//        console.log(`[IO] Received ${message}: `, ...args);
+//    });
+//
+//    // handle chat messages
+//    socket.on('chat message', function ({ from, msg }) {
+//        let text = `${from}: ${msg}`;
+//        viewModel.messages.push(text);
+//        showNotification(text, 1000);
+//    });
+//
+//    socket.on('update', (serverState) => {
+//        console.log("[SERVER STATE]: ", serverState);
+//        viewModel.update(serverState);
+//        console.log("[STATE]: ", viewModel.state);
+//    })
 }
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
@@ -1506,6 +1562,15 @@ function setSpriteVisibility(sprite, visible) {
     setTimeout(() => showNotification(null, 2000), 1000);
     await viewModel.init();
     connectToServer();
+    setInterval(() => {
+        if (theBigMessageBuffer.length > 0)
+        {
+            var message = theBigMessageBuffer.shift();
+            console.log("processing " + message.type + ". Messages left: " + theBigMessageBuffer.length + " messages");
+            processMessages(message);
+            console.log("done");
+        }
+    }, 500);
 })();
 
 //#endregion
