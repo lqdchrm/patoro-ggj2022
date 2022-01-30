@@ -1597,6 +1597,7 @@ function setSpriteVisibility(sprite, visible) {
     setTimeout(() => showNotification(null, 2000), 1000);
     await viewModel.init();
     connectToServer();
+    viewModel.move("skip");
     setInterval(() => {
         let round = theBigMessageBuffer.length ? theBigMessageBuffer[0].data.round : -1;
         while (theBigMessageBuffer.length) {
