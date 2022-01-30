@@ -116,6 +116,7 @@ body>* {
     flex-direction: row;
     align-items: stretch;
     justify-content: flex-start;
+    color: var(--theme-hl);
 }
 
 .topbar > * {
@@ -135,14 +136,6 @@ body>* {
 
 .spacer {
     flex: 1 1 auto;
-}
-
-.move_done {
-    color: green;
-}
-
-.waiting {
-    color: red;
 }
 
 /*******************************************************************************

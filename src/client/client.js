@@ -554,7 +554,6 @@ let viewModel = new class ViewModel {
 
             // add to list
             var item = document.createElement('div');
-            item.classList.add("move_done");
             item.id = player.id;
 
             let moves_left = player.commands.length - this.state.round;
