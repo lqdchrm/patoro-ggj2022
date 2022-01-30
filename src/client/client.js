@@ -31,7 +31,22 @@ class PlayerViewModel {
         this.spawnPoint = spawnPoint;
         this.deaths = 0;
 
-        this.sprite = createSprite('robot', this.spawnPoint.x, this.spawnPoint.y, id, id === socket.id);
+        const spawnType = getDataLayerInfo(this.spawnPoint.x,this.spawnPoint.y);
+        let direction = undefined;
+        if(spawnType == "spawn-down"){
+            direction = 'down';
+        }
+        else if(spawnType == "spawn-right"){
+            direction = 'right';
+        }
+        else if(spawnType == "spawn-left"){
+            direction = 'left';
+        }
+        else if(spawnType == "spawn-up"){
+            direction = 'up';
+        }
+
+        this.sprite = createSprite('robot', this.spawnPoint.x, this.spawnPoint.y, id, id === socket.id, direction);
         this.renderPromise = Promise.resolve();
     }
 
@@ -1265,7 +1280,8 @@ function setMapImage(x, y, layerIndex, tilesetIndex, tilesetTileIndex) {
  * @returns {Datatypes} A value coresponding tho the datalyer
  */
 function getDataLayerInfo(x, y) {
-    const dataLayer = viewModel.map.layers.filter(x => x.name == "data")[0];
+    const dataLayer = viewModel.map.layersByName['data'];
+    const datatileset = viewModel.map.tilesetsByName['tileset_data'];
     const array = dataLayer.data;
     const layerWidth = dataLayer.width;
     const index = x + y * layerWidth;
@@ -1275,16 +1291,22 @@ function getDataLayerInfo(x, y) {
     }
     const [, tileIndex] = currentTile;
 
-    switch (tileIndex) {
-        case 0:
-            return 'fall';
-        case 1:
-            return 'move-right';
-        case 2:
+    const property = datatileset.tiles[tileIndex].properties;
+    const type = property['type']?.value;
+
+    switch (type) {
+        case 'spawn':
+            if (property['direction']?.value) {
+                return `spawn-${property['direction']?.value}`
+            }
             return 'spawn';
+        case 'hole':
+            return 'fall';
+        case 'wall':
+            return 'wall';
 
         default:
-            console.error('Tileindex undefined', tileIndex);
+            console.error('Tiletype undefined', tileIndex);
             return 'none';
     }
 

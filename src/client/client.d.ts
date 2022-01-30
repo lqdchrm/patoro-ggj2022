@@ -1,5 +1,5 @@
 type Datatypes = 'none'
-    | 'spawn'
+    | 'spawn' | 'spawn-up'| 'spawn-down'| 'spawn-left'| 'spawn-right'
     | 'fall' | 'fall-left' | 'fall-right' | 'fall-bottom' | 'fall-top' | 'fall-bottom-left' | 'fall-top-left' | 'fall-bottom-right' | 'fall-top-right'
     | 'move-right';
 
