@@ -547,15 +547,18 @@ let viewModel = new class ViewModel {
 
                
             });
+            let to_be_removed = [];
             viewModel.fireballList.forEach((fireball, index, list) => {
-                var x = Number(fireball.style.getPropertyValue('--x'));
-                var y = Number(fireball.style.getPropertyValue('--y'));
-                var direction = getSpriteDirection(fireball);
-                var move = directionToVector(direction);
-                var new_position = { x: x + move.x, y: y + move.y };
+                let x = Number(fireball.style.getPropertyValue('--x'));
+                let y = Number(fireball.style.getPropertyValue('--y'));
+                let direction = getSpriteDirection(fireball);
+                let move = directionToVector(direction);
+                let new_position = { x: x + move.x, y: y + move.y };
+                let tile = getDataLayerInfo(x, y);
                 if (new_position.x < 0 || new_position.x > viewModel.map.width - 1
-                    || new_position.y < 0 || new_position.y > viewModel.map.height - 1) {
-                    list.splice(index, 1);
+                    || new_position.y < 0 || new_position.y > viewModel.map.height - 1
+                    || tile == 'wall') {
+                    to_be_removed.unshift(index);
                     fireball.remove();
                 }
                 else {
@@ -565,10 +568,13 @@ let viewModel = new class ViewModel {
                     var player = this.players[player_id];
                     if (new_position.x == player.x && new_position.y == player.y) {
                         player.die();
-                        list.splice(index, 1);
+                        to_be_removed.unshift(index);
                         fireball.remove();
                     }
                 });
+            });
+            to_be_removed.forEach((index) => {
+                viewModel.fireballList.splice(index, 1);
             });
         }
 
