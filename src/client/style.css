@@ -1,3 +1,8 @@
+:root {
+    --theme: purple;
+    --theme-hl: yellow;
+}
+
 * {
     box-sizing: border-box;
 }
@@ -71,7 +76,7 @@ body>* {
     padding: 64px;
     font-size: x-large;
     background: rgba(0, 0, 0, 0.7);
-    border: 5px dotted purple;
+    border: 5px dotted var(--theme);
     z-index: 4;
     border-radius: 3%;
     opacity: 0;
@@ -82,7 +87,7 @@ body>* {
     width: 100vw;
     height: 100vh;
     opacity: 1;
-    background: purple;
+    background: var(--theme);
     border-radius: 0;
     transform: inherit;
 }
@@ -106,7 +111,7 @@ body>* {
 .topbar {
     position: relative;
     width: 100vw;
-    background: rgba(255, 255, 255, 0.2);
+    background: linear-gradient(180deg, black, var(--theme), black);
     display: flex;
     flex-direction: row;
     align-items: stretch;
@@ -154,6 +159,19 @@ body>* {
 
 #controls {
     align-self: center;
+    height: 100%;
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    align-items: center;
+}
+
+#controls button {
+    height: 80%;
+    min-width: 70px;
+    flex: 0 1 auto;
+    background: linear-gradient(135deg, var(--theme-hl), var(--theme));
 }
 
 /*******************************************************************************

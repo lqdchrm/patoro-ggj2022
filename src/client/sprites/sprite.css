@@ -157,7 +157,7 @@
     content: var(--name);
     position: absolute;
     font-size: small;
-    color: yellow;
+    color: var(--theme-hl);
     width: 100%;
     text-align: center;
     top: -15px;
