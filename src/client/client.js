@@ -126,6 +126,7 @@ let viewModel = new class ViewModel {
     undo() {
         if (this.commandBuffer.length) {
             this.commandBuffer.splice(this.commandBuffer.length - 1, 1);
+            this.updateMarker();
         }
     }
 
@@ -501,21 +502,18 @@ let viewModel = new class ViewModel {
                 var move = directionToVector(direction);
                 var new_position = {x: x + move.x, y: y + move.y};
                 if (new_position.x < 0 || new_position.x > viewModel.map.width - 1
-                    || new_position.y < 0 || new_position.y > viewModel.map.height - 1)
-                {
+                    || new_position.y < 0 || new_position.y > viewModel.map.height - 1) {
                     list.splice(index, 1);
                     fireball.remove();
                 }
-                else
-                {
+                else {
                     setSpritePos(fireball, new_position);
                 }
                 Object.keys(this.players).forEach(player_id => {
                     var player = this.players[player_id];
                     var player_x = Number(player.sprite.style.getPropertyValue('--x'));
                     var player_y = Number(player.sprite.style.getPropertyValue('--y'));
-                    if (new_position.x == player.x && new_position.y == player.y)
-                    {
+                    if (new_position.x == player.x && new_position.y == player.y) {
                         player.die();
                         list.splice(index, 1);
                         fireball.remove();
@@ -596,6 +594,7 @@ var input = document.getElementById('input');
 var name_change_input = document.getElementById('name_change_input');
 var fire_button = document.getElementById('fire');
 
+var uiMain = document.getElementById('main');
 var uiMessages = document.getElementById('messages');
 var uiUserId = document.getElementById('userId');
 var uiRound = document.getElementById('round');
@@ -663,6 +662,27 @@ document.querySelectorAll(".uiCommand").forEach(cmd => {
     cmd.addEventListener("click", () => {
         viewModel.uiAction(cmd.id);
     });
+});
+
+// keyboard handling
+const keyMap = {
+    "w": { action: () => viewModel.move("up") },
+    "a": { action: () => viewModel.move("left") },
+    "s": { action: () => viewModel.move("down") },
+    "d": { action: () => viewModel.move("right") },
+    "q": { action: () => viewModel.move("turn_left") },
+    "e": { action: () => viewModel.move("turn_right") },
+    " ": { action: () => viewModel.uiAction("fire") },
+    "r": { action: () => viewModel.move("hole") },
+    "f": { action: () => viewModel.move("fill") },
+    "Enter": { action: () => viewModel.uiAction("commit") },
+    "Backspace": { action: () => viewModel.uiAction("undo") },
+    "Control": { action: () => viewModel.move("skip") },
+};
+
+uiMain.addEventListener('keyup', (evt) => {
+    evt.preventDefault();
+    keyMap[evt.key]?.action();
 });
 
 // round
