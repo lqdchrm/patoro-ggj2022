@@ -91,6 +91,15 @@
                  "type":"string",
                  "value":"spawn"
                 }]
+        }, 
+        {
+         "id":8,
+         "properties":[
+                {
+                 "name":"type",
+                 "type":"string",
+                 "value":"powerup"
+                }]
         }],
  "tilewidth":32,
  "type":"tileset",

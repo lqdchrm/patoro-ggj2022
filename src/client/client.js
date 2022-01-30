@@ -30,6 +30,7 @@ class PlayerViewModel {
         this.id = id;
         this.falling_counter = 0;
         this.reloading = 1;
+        this.hasSuperPower = false;
         this.spawnPoint = spawnPoint;
         this.deaths = 0;
 
@@ -61,9 +62,18 @@ class PlayerViewModel {
         x += movement.x;
         y += movement.y;
 
+        console.log(y);
+        if (x < 0) x = map.width - 1;
+        if (x >= map.width) x = 0;
+        if (y < 0) y = map.height - 1;
+        if (y >= map.height) y = 0;
+
         var tile = getDataLayerInfo(x, y);
         if (tile == 'wall') {
             return;
+        }
+        if (tile == 'powerup') {
+            this.hasSuperPower = true;
         }
 
         if (x >= 0 && x < map.width && y >= 0 && y < map.height) {
@@ -474,10 +484,30 @@ let viewModel = new class ViewModel {
                 } else if (local_player.reloading < 1) {
                     local_player.reloading = 4;
                     fire_button_text.textContent = "Reload " + (local_player.reloading - 1);
+                    if (local_player.hasSuperPower)
+                    {
+                        local_player.hasSuperPower = false;
+                        var direction = getSpriteDirection(local_player.sprite)
+                        var move  = directionToVector(direction);
+                        var left  = {x: move.y, y: -1 * move.x};
+                        var right = {x: -left.x, y: -left.y};
+                        var start = {x: local_player.x + 5*left.x, y: local_player.y + 5*left.y};
+                        for (let i = -5; i <= 5; i++)
+                        {
+                            var fireball  = createSprite("fireball", local_player.x, local_player.y);
+                            setSpritePos(fireball, { x: start.x, y: start.y }, direction);
+                            start.x += right.x;
+                            start.y += right.y;
+                            viewModel.fireballList.push(fireball);
+                        }
+                    }
+                    else
+                    {
                     var fireball = createSprite("fireball", local_player.x, local_player.y);
                     setSpritePos(fireball, { x: local_player.x, y: local_player.y },
                         getSpriteDirection(local_player.sprite));
                     viewModel.fireballList.push(fireball);
+                    }
                 }
                 break;
             default:
@@ -517,15 +547,18 @@ let viewModel = new class ViewModel {
 
                
             });
+            let to_be_removed = [];
             viewModel.fireballList.forEach((fireball, index, list) => {
-                var x = Number(fireball.style.getPropertyValue('--x'));
-                var y = Number(fireball.style.getPropertyValue('--y'));
-                var direction = getSpriteDirection(fireball);
-                var move = directionToVector(direction);
-                var new_position = { x: x + move.x, y: y + move.y };
+                let x = Number(fireball.style.getPropertyValue('--x'));
+                let y = Number(fireball.style.getPropertyValue('--y'));
+                let direction = getSpriteDirection(fireball);
+                let move = directionToVector(direction);
+                let new_position = { x: x + move.x, y: y + move.y };
+                let tile = getDataLayerInfo(x, y);
                 if (new_position.x < 0 || new_position.x > viewModel.map.width - 1
-                    || new_position.y < 0 || new_position.y > viewModel.map.height - 1) {
-                    list.splice(index, 1);
+                    || new_position.y < 0 || new_position.y > viewModel.map.height - 1
+                    || tile == 'wall') {
+                    to_be_removed.unshift(index);
                     fireball.remove();
                 }
                 else {
@@ -535,10 +568,13 @@ let viewModel = new class ViewModel {
                     var player = this.players[player_id];
                     if (new_position.x == player.x && new_position.y == player.y) {
                         player.die();
-                        list.splice(index, 1);
+                        to_be_removed.unshift(index);
                         fireball.remove();
                     }
                 });
+            });
+            to_be_removed.forEach((index) => {
+                viewModel.fireballList.splice(index, 1);
             });
         }
 
@@ -1382,6 +1418,8 @@ function getDataLayerInfo(x, y) {
             return 'fall';
         case 'wall':
             return 'wall';
+        case 'powerup':
+            return 'powerup';
 
         default:
             console.error('Tiletype undefined', tileIndex);
