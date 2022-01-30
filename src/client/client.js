@@ -62,6 +62,12 @@ class PlayerViewModel {
         x += movement.x;
         y += movement.y;
 
+        console.log(y);
+        if (x < 0) x = map.width - 1;
+        if (x >= map.width) x = 0;
+        if (y < 0) y = map.height - 1;
+        if (y >= map.height) y = 0;
+
         var tile = getDataLayerInfo(x, y);
         if (tile == 'wall') {
             return;
