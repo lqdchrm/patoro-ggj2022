@@ -118,7 +118,6 @@ let viewModel = new class ViewModel {
 
         this.commandBuffer = [];
         this.timer = null;
-        this.timerValue = null;
         this.fireballList = [];
 
         /**@type {HTMLDivElement[]} */
@@ -155,6 +154,14 @@ let viewModel = new class ViewModel {
     }
 
     move(command) {
+        if (this.timer) {
+            clearTimeout(this.timer);
+            this.timer = null;
+        }
+        this.timer = setTimeout(() => {
+            this.move('skip');
+        }, 3000);
+
         this.commandBuffer.push(command);
         if (this.commandBuffer.length == COMMAND_BUFFER_LENGTH) {
             var send_commands = this.commandBuffer.splice(0, 1);
@@ -545,7 +552,7 @@ let viewModel = new class ViewModel {
                     this.handleMove(viewModel.map, player, move);
                 }
 
-               
+
             });
             let to_be_removed = [];
             viewModel.fireballList.forEach((fireball, index, list) => {
