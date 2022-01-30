@@ -43,6 +43,7 @@
     --sprite-height: 96px;
     --frames: 3;
     transition: none;
+    opacity: 0.7;
 
     /* THis must be cented...*/
     top: calc(1px * var(--y) * var(--tileHeight) - var(--sprite-height)/2 + 1px * var(--tileHeight)/2);
@@ -55,6 +56,7 @@
     --frames: 3;
     filter: hue-rotate(117deg);
     transition: none;
+    opacity: 0.7;
 
     /* THis must be cented...*/
     top: calc(1px * var(--y) * var(--tileHeight) - var(--sprite-height)/2 + 1px * var(--tileHeight)/2);
@@ -67,6 +69,7 @@
     --frames: 3;
     filter: hue-rotate(278deg);
     transition: none;
+    opacity: 0.7;
 
     /* THis must be cented...*/
     top: calc(1px * var(--y) * var(--tileHeight) - var(--sprite-height)/2 + 1px * var(--tileHeight)/2);
@@ -77,6 +80,17 @@
  
     --frames: 3;
     filter: hue-rotate(278deg);
+    opacity: 0.7;
+
+    /* THis must be cented...*/
+    top: calc(1px * var(--y) * var(--tileHeight) - var(--sprite-height)/2 + 1px * var(--tileHeight)/2);
+}
+.sprite.cursor-fire {
+    background-image: url("cursor-fire.png");
+ 
+    --frames: 3;
+    filter: hue-rotate(278deg);
+    opacity: 0.7;
 
     /* THis must be cented...*/
     top: calc(1px * var(--y) * var(--tileHeight) - var(--sprite-height)/2 + 1px * var(--tileHeight)/2);
