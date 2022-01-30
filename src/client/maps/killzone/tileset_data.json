@@ -28,6 +28,15 @@
                 }]
         }, 
         {
+         "id":3,
+         "properties":[
+                {
+                 "name":"type",
+                 "type":"string",
+                 "value":"wall"
+                }]
+        }, 
+        {
          "id":4,
          "properties":[
                 {
