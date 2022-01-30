@@ -14,6 +14,8 @@ import State from "./state.js";
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
 
+const COMMAND_BUFFER_LENGTH = 1;
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // ██╗   ██╗██╗███████╗██╗    ██╗███╗   ███╗ ██████╗ ██████╗ ███████╗██╗
@@ -108,35 +110,7 @@ let viewModel = new class ViewModel {
     async init() {
         this.map = await loadMap("gannter", "./maps/killzone");
         await updateMap();
-
-        //this.startTimer();
     }
-
-    /*
-    startTimer() {
-        let running = this.timer != null;
-        if (!running) {
-            this.timerValue = 10;
-            this.timer = setInterval(() => {
-                this.timerValue -= 1;
-                if (this.timerValue <= 0) {
-                    if (this.commandBuffer.length < 5) {
-                        let cmds = Array(5 - this.commandBuffer.length).fill('skip');
-                        cmds.forEach(cmd => this.move(cmd));
-                    }
-                    socket.emit("command", this.commandBuffer);
-                    this.commandBuffer.splice(0, this.commandBuffer.length);
-                    if (running) {
-                        this.startTimer();
-                    } else {
-                        clearInterval(this.timer);
-                        this.timer = null;
-                    }
-                }
-            }, 1000);
-        }
-    }
-    */
 
     undo() {
         if (this.commandBuffer.length) {
@@ -146,7 +120,7 @@ let viewModel = new class ViewModel {
     }
 
     commit() {
-        while (this.commandBuffer.length < 5) {
+        while (this.commandBuffer.length < COMMAND_BUFFER_LENGTH) {
             this.commandBuffer.push('skip');
         }
         socket.emit("command", this.commandBuffer);
@@ -156,7 +130,7 @@ let viewModel = new class ViewModel {
 
     move(command) {
         this.commandBuffer.push(command);
-        if (this.commandBuffer.length == 5) {
+        if (this.commandBuffer.length == COMMAND_BUFFER_LENGTH) {
             socket.emit("command", this.commandBuffer);
             this.commandBuffer.splice(0, this.commandBuffer.length);
         }
@@ -458,12 +432,12 @@ let viewModel = new class ViewModel {
                 break;
             case 'fire':
                 local_player.reloading -= 1;
-                fire_button.textContent = "reload " + (local_player.reloading - 1);
+                fire_button_text.textContent = "Reload " + (local_player.reloading - 1);
                 if (local_player.reloading == 1) {
-                    fire_button.textContent = "FIRE !!!";
+                    fire_button_text.textContent = "FIRE !!!";
                 } else if (local_player.reloading < 1) {
                     local_player.reloading = 4;
-                    fire_button.textContent = "reload " + (local_player.reloading - 1);
+                    fire_button_text.textContent = "Reload " + (local_player.reloading - 1);
                     var fireball = createSprite("fireball", local_player.x, local_player.y);
                     setSpritePos(fireball, {x: local_player.x, y: local_player.y},
                                  getSpriteDirection(local_player.sprite));
@@ -491,10 +465,6 @@ let viewModel = new class ViewModel {
                 });
             });
         }
-
-        // remove old players
-        // let removedPlayers = Object.keys(this.state.players).filter(id => !serverState.players[id]).sort();
-        // removedPlayers.forEach(id => this.removePlayer(id));
 
         // update moves
         let allPlayers = Object.keys(serverState.players).sort().map(id => serverState.players[id]);
@@ -544,8 +514,6 @@ let viewModel = new class ViewModel {
 
         // update UI
         this.updateUi();
-
-        //this.startTimer();
     }
 
     uiAction(cmd) {
@@ -607,7 +575,7 @@ let viewModel = new class ViewModel {
 var form = document.getElementById('form');
 var input = document.getElementById('input');
 var name_change_input = document.getElementById('name_change_input');
-var fire_button = document.getElementById('fire');
+var fire_button_text = document.getElementById('fire-text');
 
 var uiMain = document.getElementById('main');
 var uiMessages = document.getElementById('messages');
@@ -687,12 +655,12 @@ const keyMap = {
     "d": { action: () => viewModel.move("right") },
     "q": { action: () => viewModel.move("turn_left") },
     "e": { action: () => viewModel.move("turn_right") },
-    " ": { action: () => viewModel.uiAction("fire") },
+    " ": { action: () => viewModel.move("fire") },
     "r": { action: () => viewModel.move("hole") },
     "f": { action: () => viewModel.move("fill") },
+    "Control": { action: () => viewModel.move("skip") },
     "Enter": { action: () => viewModel.uiAction("commit") },
     "Backspace": { action: () => viewModel.uiAction("undo") },
-    "Control": { action: () => viewModel.move("skip") },
 };
 
 uiMain.addEventListener('keyup', (evt) => {
