@@ -25,8 +25,13 @@
 
 .sprite.cursor {
     background-image: url("cursor.png");
+
     --frames: 3;
     opacity: 0.75;
+
+    
+    /* THis must be cented...*/
+    top: calc(1px * var(--y) * var(--tileHeight) - var(--sprite-height)/2 + 1px * var(--tileHeight)/2);
 }
 
 .sprite.cursor-dig {
@@ -34,6 +39,7 @@
     --sprite-width: 96px;
     --sprite-height: 96px;
     --frames: 3;
+    transition: none;
 
     /* THis must be cented...*/
     top: calc(1px * var(--y) * var(--tileHeight) - var(--sprite-height)/2 + 1px * var(--tileHeight)/2);
@@ -45,6 +51,7 @@
     --sprite-height: 96px;
     --frames: 3;
     filter: hue-rotate(117deg);
+    transition: none;
 
     /* THis must be cented...*/
     top: calc(1px * var(--y) * var(--tileHeight) - var(--sprite-height)/2 + 1px * var(--tileHeight)/2);
@@ -54,6 +61,17 @@
     background-image: url("cursor-dig.png");
     --sprite-width: 96px;
     --sprite-height: 96px;
+    --frames: 3;
+    filter: hue-rotate(278deg);
+    transition: none;
+
+    /* THis must be cented...*/
+    top: calc(1px * var(--y) * var(--tileHeight) - var(--sprite-height)/2 + 1px * var(--tileHeight)/2);
+}
+
+.sprite.cursor-move {
+    background-image: url("cursor-move.png");
+ 
     --frames: 3;
     filter: hue-rotate(278deg);
 

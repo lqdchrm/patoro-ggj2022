@@ -6,6 +6,8 @@ type Datatypes = 'none'
 type TilesetNames = 'tileset' | 'tileset_data' | 'tileset_top';
 type LayerNames = 'data' | 'deco' | 'base';
 
+type Direction = 'up' | 'down' | 'left'| 'right';
+
 
 type Layer = {
     data: [number, number][],
@@ -77,4 +79,4 @@ type TileMap = {
     }[]
 }
 
-type SpriteTypes = 'man' | 'robot' | 'cursor' | 'cursor-dig'| 'cursor-fill'| 'cursor-error';
+type SpriteTypes = 'man' | 'robot' | 'cursor' | 'cursor-dig'| 'cursor-fill'| 'cursor-error'| 'cursor-move';

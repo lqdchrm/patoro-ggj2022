@@ -104,6 +104,9 @@ let viewModel = new class ViewModel {
         this.timerValue = null;
         this.fireballList = [];
 
+        /**@type {HTMLDivElement[]} */
+        this.markers = undefined
+
         /**@type {TileMap} */
         this.map = {};
 
@@ -168,8 +171,8 @@ let viewModel = new class ViewModel {
         //     }
         // }
     }
-
     updateMarker() {
+        const unknwoncommands = [];
         const currentPlayer = this.players[socket.id];
         if (!this.markers) {
             this.markers = [createSprite("cursor", currentPlayer.x, currentPlayer.y),
@@ -181,23 +184,16 @@ let viewModel = new class ViewModel {
             ];
         }
         this.markers.forEach(x => setSpriteVisibility(x, false))
-        setSpriteVisibility(this.markers[0], false)
-        let usedDigs = 0;
         const vector = { x: currentPlayer.x, y: currentPlayer.y };
 
         const commands = [...this.state.players[socket.id].commands.slice(this.state.round), ...this.commandBuffer];
 
 
         function getDirectionsFromCommands(index) {
-
             if (index < 0)
                 return getSpriteDirection(currentPlayer.sprite);
             const move = commands[index];
-
-
             switch (move) {
-
-
                 case 'left':
                 case 'right':
                 case 'up':
@@ -240,29 +236,65 @@ let viewModel = new class ViewModel {
                 case 'fill':
                     return getDirectionsFromCommands(index - 1);
                 default:
-                    console.warn(`Unknown command`, move);
+                    if (!unknwoncommands.includes(move))
+                        unknwoncommands.push(move);
                     return getDirectionsFromCommands(index - 1);
             }
-
-
         }
+
+        const usedMarkers = [];
 
         for (let index = 0; index < commands.length; index++) {
             const c = commands[index];
-            setSpriteVisibility(this.markers[0], true)
+
+            /**
+             * 
+             * @param {SpriteTypes} type 
+             * @param {{x:number,y:number}} position 
+             * @param {Direction} direction 
+             * @param {boolean} searchfromback searchess the last index
+             */
+
+            const getcurserSprite = (type, position, direction, searchfromback) => {
+                if (this.markers.length <= 0) {
+                    this.markers.push(createSprite(type, position.x, position.y, undefined, false, direction))
+                }
+                else {
+                    // try to find the marker used last...
+                    const filtedMarkers = this.markers.filter(x => getSpriteType(x) == type)
+                    const currentMarker = filtedMarkers[searchfromback ? filtedMarkers.length - 1 : 0] ?? this.markers[0];
+
+                    this.markers.splice(this.markers.indexOf(currentMarker), 1);
+                    usedMarkers.push(currentMarker);
+                    setSpritePos(currentMarker, position, direction)
+                    setSpriteType(currentMarker, type)
+                    setSpriteVisibility(currentMarker, true)
+                }
+
+
+            }
+
 
             switch (c) {
                 case 'left':
                     vector.x -= 1;
+                    if (index < commands.length - 1) // ignore the last command
+                        getcurserSprite('cursor-move', vector, getDirectionsFromCommands(index));
                     break;
                 case 'right':
                     vector.x += 1;
+                    if (index < commands.length - 1) // ignore the last command
+                        getcurserSprite('cursor-move', vector, getDirectionsFromCommands(index));
                     break;
                 case 'up':
                     vector.y -= 1;
+                    if (index < commands.length - 1) // ignore the last command
+                        getcurserSprite('cursor-move', vector, getDirectionsFromCommands(index));
                     break;
                 case 'down':
                     vector.y += 1;
+                    if (index < commands.length - 1) // ignore the last command
+                        getcurserSprite('cursor-move', vector, getDirectionsFromCommands(index));
                     break;
 
                 case 'hole':
@@ -272,10 +304,7 @@ let viewModel = new class ViewModel {
                         const translate = directionToVector(direction);
                         const digPosition = { x: vector.x + translate.x, y: vector.y + translate.y };
 
-                        usedDigs++;
-                        if (this.markers.length <= usedDigs) {
-                            this.markers.push(createSprite(c == 'hole' ? 'cursor-dig' : 'cursor-fill', digPosition.x, digPosition.y, undefined, false, direction))
-                        }
+
                         let candig = true;
 
                         if (direction == 'up') {
@@ -289,16 +318,30 @@ let viewModel = new class ViewModel {
 
                         }
 
-                        setSpritePos(this.markers[usedDigs], digPosition, direction)
-                        setSpriteType(this.markers[usedDigs], !candig ? 'cursor-error' : c == 'hole' ? 'cursor-dig' : 'cursor-fill')
-                        setSpriteVisibility(this.markers[usedDigs], true)
+                        const spriteType = !candig
+                            ? 'cursor-error'
+                            : c == 'hole'
+                                ? 'cursor-dig'
+                                : 'cursor-fill';
+
+                        getcurserSprite(spriteType, digPosition, direction);
+
                     }
                     break;
                 default:
                     break;
             }
+            if (index == commands.length - 1) {
+                getcurserSprite('cursor', vector, getDirectionsFromCommands(index))
+            }
+
         }
-        setSpritePos(this.markers[0], vector, getDirectionsFromCommands(commands.length - 1))
+        // setSpritePos(this.markers[0], vector, getDirectionsFromCommands(commands.length - 1))
+        this.markers = [...usedMarkers, ...this.markers];
+
+        if (unknwoncommands.length > 0) {
+            console.warn(`Unknown command`, unknwoncommands);
+        }
     }
 
     calcSpawnPoint(id) {
@@ -1326,6 +1369,12 @@ function createSprite(type, x, y, name, isMe, direction) {
     if (isMe) {
         spriteDiv.classList.add("me");
     }
+
+    if (spriteDiv.classList.contains('undefined')) {
+        console.trace(`Added undefined to sprite`, { type, x, y, name, isMe, direction })
+        // throw 'error'
+    }
+
     uiActors.appendChild(spriteDiv);
     return spriteDiv;
 }
@@ -1342,6 +1391,33 @@ function setSpriteType(sprite, type) {
     }
     sprite.classList.remove([...sprite.classList].filter(x => !['up', 'right', 'left', 'down', 'hide', 'dead', 'sprite', 'me'].includes(x)))
     sprite.classList.add(type);
+    if (sprite.classList.contains('undefined')) {
+        console.trace(`Added undefined to sprite`, { sprite, type })
+        // throw 'error'
+    }
+
+}
+
+/**
+ *
+ * @param {HTMLDivElement} sprite
+ * @param {SpriteTypes} type
+ * @returns {SpriteTypes}
+ */
+
+function getSpriteType(sprite) {
+
+    const types = ['man', 'robot', 'cursor', 'cursor-dig', 'cursor-fill', 'cursor-error', 'cursor-move'];
+    const classes = [...sprite.classList]
+
+    const possible = classes.filter(x => types.includes(x));
+
+    if (possible.length > 1) {
+        console.error(`We found more then one possible sprite type, this should not happen. This method will return a wrong value`, possible);
+    }
+
+    return possible[0];
+
 
 }
 
