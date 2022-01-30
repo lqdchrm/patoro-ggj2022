@@ -605,6 +605,7 @@ var form = document.getElementById('form');
 var input = document.getElementById('input');
 var name_change_input = document.getElementById('name_change_input');
 
+var uiMain = document.getElementById('main');
 var uiMessages = document.getElementById('messages');
 var uiUserId = document.getElementById('userId');
 var uiRound = document.getElementById('round');
@@ -672,6 +673,27 @@ document.querySelectorAll(".uiCommand").forEach(cmd => {
     cmd.addEventListener("click", () => {
         viewModel.uiAction(cmd.id);
     });
+});
+
+// keyboard handling
+const keyMap = {
+    "w": { action: () => viewModel.move("up") },
+    "a": { action: () => viewModel.move("left") },
+    "s": { action: () => viewModel.move("down") },
+    "d": { action: () => viewModel.move("right") },
+    "q": { action: () => viewModel.move("turn_left") },
+    "e": { action: () => viewModel.move("turn_right") },
+    " ": { action: () => viewModel.uiAction("fire") },
+    "r": { action: () => viewModel.move("hole") },
+    "f": { action: () => viewModel.move("fill") },
+    "Enter": { action: () => viewModel.uiAction("commit") },
+    "Backspace": { action: () => viewModel.uiAction("undo") },
+    "Control": { action: () => viewModel.move("skip") },
+};
+
+uiMain.addEventListener('keyup', (evt) => {
+    evt.preventDefault();
+    keyMap[evt.key]?.action();
 });
 
 // round
