@@ -657,6 +657,28 @@ document.querySelectorAll(".uiCommand").forEach(cmd => {
     });
 });
 
+// keyboard handling
+const keyMap = {
+    "w": { action: () => viewModel.move("up") },
+    "a": { action: () => viewModel.move("left") },
+    "s": { action: () => viewModel.move("down") },
+    "d": { action: () => viewModel.move("right") },
+    "q": { action: () => viewModel.move("turn_left") },
+    "e": { action: () => viewModel.move("turn_right") },
+    " ": { action: () => viewModel.uiAction("fire") },
+    "Control": { action: () => viewModel.move("hole") },
+    "Alt": { action: () => viewModel.move("fill") },
+};
+document.body.addEventListener('keypress', (evt) => { evt.preventDefault(); });
+document.body.addEventListener('keyup', (evt) => {
+    console.log(evt);
+    evt.preventDefault();
+    evt.stopPropagation();
+    keyMap[evt.key]?.action();
+
+    return false;
+});
+
 // round
 viewModel = new Proxy(viewModel, {
     set: function (target, key, value) {
