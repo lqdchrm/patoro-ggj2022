@@ -14,8 +14,8 @@ import State from "./state.js";
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
 
-const COMMAND_BUFFER_LENGTH = 3;
-
+const COMMAND_BUFFER_LENGTH = 5;
+const NETWORK_INTERVAL = 500;
 
 ////////////////////////////////////////////////////////////////////////////////
 // ██╗   ██╗██╗███████╗██╗    ██╗███╗   ███╗ ██████╗ ██████╗ ███████╗██╗
@@ -134,7 +134,8 @@ let viewModel = new class ViewModel {
     }
 
     commit() {
-        while (this.commandBuffer.length < COMMAND_BUFFER_LENGTH) {
+        let missingMsgs = COMMAND_BUFFER_LENGTH - this.commandBuffer.length;
+        for (let i=0; i<missingMsgs; ++i) {
             this.move('skip');
         }
     }
@@ -142,8 +143,8 @@ let viewModel = new class ViewModel {
     move(command) {
         this.commandBuffer.push(command);
         if (this.commandBuffer.length == COMMAND_BUFFER_LENGTH) {
-            socket.emit("command", this.commandBuffer);
-            var send_commands = this.commandBuffer.splice(0, this.commandBuffer.length);
+            var send_commands = this.commandBuffer.splice(0, 1);
+            socket.emit("command", send_commands);
             this.state.players[socket.id].commands.push(...send_commands);
         }
         this.updateMarker();
@@ -249,14 +250,15 @@ let viewModel = new class ViewModel {
 
         const usedMarkers = [];
 
+
         for (let index = 0; index < commands.length; index++) {
             const c = commands[index];
 
             /**
-             * 
-             * @param {SpriteTypes} type 
-             * @param {{x:number,y:number}} position 
-             * @param {Direction} direction 
+             *
+             * @param {SpriteTypes} type
+             * @param {{x:number,y:number}} position
+             * @param {Direction} direction
              * @param {boolean} searchfromback searchess the last index
              */
 
@@ -282,24 +284,20 @@ let viewModel = new class ViewModel {
 
             switch (c) {
                 case 'left':
+                    getcurserSprite('cursor-move', vector, getDirectionsFromCommands(index));
                     vector.x -= 1;
-                    if (index < commands.length - 1) // ignore the last command
-                        getcurserSprite('cursor-move', vector, getDirectionsFromCommands(index));
                     break;
                 case 'right':
+                    getcurserSprite('cursor-move', vector, getDirectionsFromCommands(index));
                     vector.x += 1;
-                    if (index < commands.length - 1) // ignore the last command
-                        getcurserSprite('cursor-move', vector, getDirectionsFromCommands(index));
                     break;
                 case 'up':
+                    getcurserSprite('cursor-move', vector, getDirectionsFromCommands(index));
                     vector.y -= 1;
-                    if (index < commands.length - 1) // ignore the last command
-                        getcurserSprite('cursor-move', vector, getDirectionsFromCommands(index));
                     break;
                 case 'down':
+                    getcurserSprite('cursor-move', vector, getDirectionsFromCommands(index));
                     vector.y += 1;
-                    if (index < commands.length - 1) // ignore the last command
-                        getcurserSprite('cursor-move', vector, getDirectionsFromCommands(index));
                     break;
 
                 case 'hole':
@@ -1567,13 +1565,18 @@ function setSpriteVisibility(sprite, visible) {
     await viewModel.init();
     connectToServer();
     setInterval(() => {
-        if (theBigMessageBuffer.length > 0) {
+        let round = theBigMessageBuffer.length ? theBigMessageBuffer[0].data.round : -1;
+        while(theBigMessageBuffer.length) {
             var message = theBigMessageBuffer.shift();
+
+            if (message.data.round > round)
+                break;
+
             console.log("processing " + message.type + ". Messages left: " + theBigMessageBuffer.length + " messages");
             processMessages(message);
             console.log("done");
         }
-    }, 2000);
+    }, NETWORK_INTERVAL);
 })();
 
 //#endregion
