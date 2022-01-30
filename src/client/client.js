@@ -160,26 +160,6 @@ let viewModel = new class ViewModel {
         });
     }
 
-    checkForMoveNotification() {
-        // if (!this._hurryTimer) { this._hurryTimer = null; }
-        // let players = Object.values(this.state.players);
-        // if (players.length > 1) {
-        //     let playerWithoutMoves = players.filter(p =>
-        //         (p.id !== socket.id) &&
-        //         (p.diedInRound === null) &&
-        //         (p.commands.length - this.state.round === 0)
-        //     );
-
-        //     if (playerWithoutMoves.length == 0 && this.commandBuffer.length == 0) {
-        //         if (!this._hurryTimer) {
-        //             this._hurryTimer = setTimeout(() => {
-        //                 showNotification("Hurry Up!!", 1500);
-        //                 this._hurryTimer = null;
-        //             }, 10000);
-        //         }
-        //     }
-        // }
-    }
     updateMarker() {
         const unknwoncommands = [];
         const currentPlayer = this.players[socket.id];
@@ -343,7 +323,6 @@ let viewModel = new class ViewModel {
             }
 
         }
-        // setSpritePos(this.markers[0], vector, getDirectionsFromCommands(commands.length - 1))
         this.markers = [...usedMarkers, ...this.markers];
 
         if (unknwoncommands.length > 0) {
@@ -362,9 +341,11 @@ let viewModel = new class ViewModel {
         return spawnPoint;
     }
 
-    addNewPlayer(id) {
+    addNewPlayer(id, serverState) {
         let spawnPoint = this.calcSpawnPoint(id);
         this.players[id] = new PlayerViewModel(id, spawnPoint);
+        if (serverState.players[id].diedInRound !== null)
+            this.players[id].sprite.classList.add('dead');
     }
 
     removePlayer(id) {
@@ -524,6 +505,9 @@ let viewModel = new class ViewModel {
         // update moves
         let allPlayers = Object.keys(serverState.players).sort().map(id => serverState.players[id]);
 
+        // set all dead players
+        allPlayers.filter(x => x.diedInRound !== null & x.diedInRound <= serverState.round).forEach(player => this.players[player.id].sprite.classList.add("dead"));
+
         for (let round = this.state.round; round < serverState.round; ++round) {
             allPlayers.forEach(player => {
                 let move = round < player.commands.length ? player.commands[round] : null;
@@ -531,9 +515,7 @@ let viewModel = new class ViewModel {
                     this.handleMove(viewModel.map, player, move);
                 }
 
-                if (player.diedInRound !== null) {
-                    this.players[player.id].sprite.classList.add("dead");
-                }
+               
             });
             viewModel.fireballList.forEach((fireball, index, list) => {
                 var x = Number(fireball.style.getPropertyValue('--x'));
@@ -551,8 +533,6 @@ let viewModel = new class ViewModel {
                 }
                 Object.keys(this.players).forEach(player_id => {
                     var player = this.players[player_id];
-                    var player_x = Number(player.sprite.style.getPropertyValue('--x'));
-                    var player_y = Number(player.sprite.style.getPropertyValue('--y'));
                     if (new_position.x == player.x && new_position.y == player.y) {
                         player.die();
                         list.splice(index, 1);
@@ -584,7 +564,6 @@ let viewModel = new class ViewModel {
         this.updateUiPlayerList();
         this.updateMarker();
         this.updatePlayerNames();
-        this.checkForMoveNotification();
     }
 
     updateUiPlayerList() {
@@ -772,17 +751,20 @@ var theBigMessageBuffer = [];
 
 function connectToServer() {
     socket = io();
-    socket.onAny((message, ...args) => {
-        console.log("received " + message);
-        theBigMessageBuffer.push({ type: message, data: args[0] });
+    socket.onAny((type, data) => {
+        console.log("received " + type);
+        let packet = { type, data };
+        if (type === 'update') {
+            theBigMessageBuffer.push(packet);
+        } else {
+            processMessages(packet);
+        }
     });
 }
 
-function processMessages(msg) {
-    var type = msg.type;
-    var message = msg.data;
+function processMessages({type, data}) {
 
-    console.log(`[IO] Received ${type} ${message}: `);
+    console.log(`[IO] Received ${type} ${data}: `);
     switch (type) {
         // on connect
         case 'connect':
@@ -800,9 +782,9 @@ function processMessages(msg) {
         // on disconnect
         case 'disconnect':
             {
-                console.log(`[IO] Disconnected: ${reason}`);
-                viewModel.messages.push(`Disconnected from Server: ${reason}`);
-                if (reason === "io server disconnect") {
+                console.log(`[IO] Disconnected: ${data}`);
+                viewModel.messages.push(`Disconnected from Server: ${data}`);
+                if (data === "io server disconnect") {
                     // the disconnection was initiated by the server, you need to reconnect manually
                     socket.connect();
                 }
@@ -811,14 +793,15 @@ function processMessages(msg) {
         // log everything
         // handle chat messages
         case 'chat message': {
-            var [from, msg] = message;
-            let text = `${from}: ${msg}`;
+            var {from, msg} = data;
+            let sender = viewModel.state.players[from];
+            let text = `${sender?.name ?? from}: ${msg}`;
             viewModel.messages.push(text);
-            showNotification(text, 1000);
+            // showNotification(text, 1000);
         } break;
 
         case 'update': {
-            var serverState = message;
+            var serverState = data;
             console.log("[SERVER STATE]: ", serverState);
             viewModel.update(serverState);
             console.log("[STATE]: ", viewModel.state);
@@ -1571,7 +1554,7 @@ function setSpriteVisibility(sprite, visible) {
     connectToServer();
     setInterval(() => {
         let round = theBigMessageBuffer.length ? theBigMessageBuffer[0].data.round : -1;
-        while(theBigMessageBuffer.length) {
+        while (theBigMessageBuffer.length) {
             var message = theBigMessageBuffer.shift();
 
             if (message.data.round > round)
