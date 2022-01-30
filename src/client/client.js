@@ -154,13 +154,13 @@ let viewModel = new class ViewModel {
     }
 
     move(command) {
-        if (this.timer) {
-            clearTimeout(this.timer);
-            this.timer = null;
+        if (!this.timer) {
+            this.timer = setInterval(() => {
+                let moves_ahead = this.meState.commands.length - this.state.round
+                if (moves_ahead <= 0 && Object.values(this.players).length > 1)
+                    this.move('skip');
+            }, 2000);
         }
-        this.timer = setTimeout(() => {
-            this.move('skip');
-        }, 3000);
 
         this.commandBuffer.push(command);
         if (this.commandBuffer.length == COMMAND_BUFFER_LENGTH) {
