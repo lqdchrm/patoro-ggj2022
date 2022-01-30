@@ -30,6 +30,7 @@ class PlayerViewModel {
         this.id = id;
         this.falling_counter = 0;
         this.reloading = 1;
+        this.hasSuperPower = false;
         this.spawnPoint = spawnPoint;
         this.deaths = 0;
 
@@ -489,10 +490,30 @@ let viewModel = new class ViewModel {
                 } else if (local_player.reloading < 1) {
                     local_player.reloading = 4;
                     fire_button_text.textContent = "Reload " + (local_player.reloading - 1);
+                    if (local_player.hasSuperPower)
+                    {
+                        local_player.hasSuperPower = false;
+                        var direction = getSpriteDirection(local_player.sprite)
+                        var move = directionToVector(direction);
+                        var left = {y: local_player.x - move.x, x: -1 * (local_player.y - y)};
+                        var right = {x: -left.x, y: -left.y};
+                        var start = {x: local_player.x + 5*left.x, y: local_player.y + 5*left};
+                        for (let i = -5; i <= 5; i++)
+                        {
+                            var fireball  = createSprite("fireball", local_player.x, local_player.y);
+                            setSpritePos(fireball, { x: start.x, y: start.y }, direction);
+                            start.x += right.x;
+                            start.y += right.y;
+                            viewModel.fireballList.push(fireball);
+                        }
+                    }
+                    else
+                    {
                     var fireball = createSprite("fireball", local_player.x, local_player.y);
                     setSpritePos(fireball, { x: local_player.x, y: local_player.y },
                         getSpriteDirection(local_player.sprite));
                     viewModel.fireballList.push(fireball);
+                    }
                 }
                 break;
             default:
