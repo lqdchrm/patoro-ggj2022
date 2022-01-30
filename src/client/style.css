@@ -116,6 +116,7 @@ body>* {
 .topbar {
     position: relative;
     width: 100vw;
+    height: 90px;
     background: linear-gradient(180deg, black, var(--theme), black);
     display: flex;
     flex-direction: row;
