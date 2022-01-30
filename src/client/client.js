@@ -59,6 +59,12 @@ class PlayerViewModel {
         var movement = directionToVector(move);
         x += movement.x;
         y += movement.y;
+
+        var tile = getDataLayerInfo(x, y);
+        if (tile == 'wall') {
+            return;
+        }
+
         if (x >= 0 && x < map.width && y >= 0 && y < map.height) {
             setSpritePos(this.sprite, { x: x, y: y }, move ?? 'skip');
         }
