@@ -14,7 +14,7 @@ import State from "./state.js";
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
 
-const COMMAND_BUFFER_LENGTH = 1;
+const COMMAND_BUFFER_LENGTH = 5;
 const NETWORK_INTERVAL = 500;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -128,7 +128,8 @@ let viewModel = new class ViewModel {
     }
 
     commit() {
-        while (this.commandBuffer.length < COMMAND_BUFFER_LENGTH) {
+        let missingMsgs = COMMAND_BUFFER_LENGTH - this.commandBuffer.length;
+        for (let i=0; i<missingMsgs; ++i) {
             this.move('skip');
         }
     }
@@ -136,8 +137,8 @@ let viewModel = new class ViewModel {
     move(command) {
         this.commandBuffer.push(command);
         if (this.commandBuffer.length == COMMAND_BUFFER_LENGTH) {
-            socket.emit("command", this.commandBuffer);
-            var send_commands = this.commandBuffer.splice(0, this.commandBuffer.length);
+            var send_commands = this.commandBuffer.splice(0, 1);
+            socket.emit("command", send_commands);
             this.state.players[socket.id].commands.push(...send_commands);
         }
         this.updateMarker();
