@@ -1302,7 +1302,10 @@ function getDataLayerInfo(x, y) {
     }
     const [, tileIndex] = currentTile;
 
-    const property = datatileset.tiles[tileIndex].properties;
+    const property = datatileset.tiles[tileIndex]?.properties;
+    if(!property){
+        return 'none'
+    }
     const type = property['type']?.value;
 
     switch (type) {
