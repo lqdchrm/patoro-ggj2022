@@ -66,6 +66,9 @@ class PlayerViewModel {
         if (tile == 'wall') {
             return;
         }
+        if (tile == 'powerup') {
+            this.hasSuperPower = true;
+        }
 
         if (x >= 0 && x < map.width && y >= 0 && y < map.height) {
             setSpritePos(this.sprite, { x: x, y: y }, move ?? 'skip');
@@ -500,10 +503,10 @@ let viewModel = new class ViewModel {
                     {
                         local_player.hasSuperPower = false;
                         var direction = getSpriteDirection(local_player.sprite)
-                        var move = directionToVector(direction);
-                        var left = {y: local_player.x - move.x, x: -1 * (local_player.y - y)};
+                        var move  = directionToVector(direction);
+                        var left  = {x: move.y, y: -1 * move.x};
                         var right = {x: -left.x, y: -left.y};
-                        var start = {x: local_player.x + 5*left.x, y: local_player.y + 5*left};
+                        var start = {x: local_player.x + 5*left.x, y: local_player.y + 5*left.y};
                         for (let i = -5; i <= 5; i++)
                         {
                             var fireball  = createSprite("fireball", local_player.x, local_player.y);
@@ -1423,6 +1426,8 @@ function getDataLayerInfo(x, y) {
             return 'fall';
         case 'wall':
             return 'wall';
+        case 'powerup':
+            return 'powerup';
 
         default:
             console.error('Tiletype undefined', tileIndex);
