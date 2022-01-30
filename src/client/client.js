@@ -27,9 +27,9 @@ class PlayerViewModel {
     constructor(id, spawnPoint) {
         this.id = id;
         this.falling_counter = 0;
-        this.laser_loading   = 0;
-        this.spawnPoint      = spawnPoint;
-        this.deaths          = 0;
+        this.laser_loading = 0;
+        this.spawnPoint = spawnPoint;
+        this.deaths = 0;
 
         this.sprite = createSprite('robot', this.spawnPoint.x, this.spawnPoint.y, id, id === socket.id);
         this.renderPromise = Promise.resolve();
@@ -136,6 +136,7 @@ let viewModel = new class ViewModel {
     undo() {
         if (this.commandBuffer.length) {
             this.commandBuffer.splice(this.commandBuffer.length - 1, 1);
+            this.updateMarker();
         }
     }
 
@@ -460,7 +461,7 @@ let viewModel = new class ViewModel {
                     var y = Number(fireball.style.getPropertyValue('--y'));
                     var direction = getSpriteDirection(local_player.sprite);
                     var move = directionToVector(direction);
-                    var new_position = {x: x + move.x, y: y + move.y};
+                    var new_position = { x: x + move.x, y: y + move.y };
                     setSpritePos(fireball, new_position, direction);
                     viewModel.fireballList.push(fireball);
                 }
@@ -510,23 +511,20 @@ let viewModel = new class ViewModel {
                 var y = Number(fireball.style.getPropertyValue('--y'));
                 var direction = getSpriteDirection(fireball);
                 var move = directionToVector(direction);
-                var new_position = {x: x+move.x, y: y+move.y};
+                var new_position = { x: x + move.x, y: y + move.y };
                 if (new_position.x < 0 || new_position.x > viewModel.map.width - 1
-                    || new_position.y < 0 || new_position.y > viewModel.map.height - 1)
-                {
+                    || new_position.y < 0 || new_position.y > viewModel.map.height - 1) {
                     list.splice(index, 1);
                     fireball.remove();
                 }
-                else
-                {
+                else {
                     setSpritePos(fireball, new_position);
                 }
                 Object.keys(this.players).forEach(player_id => {
                     var player = this.players[player_id];
                     var player_x = Number(player.sprite.style.getPropertyValue('--x'));
                     var player_y = Number(player.sprite.style.getPropertyValue('--y'));
-                    if (new_position.x == player.x && new_position.y == player.y)
-                    {
+                    if (new_position.x == player.x && new_position.y == player.y) {
                         player.die();
                         list.splice(index, 1);
                         fireball.remove();
