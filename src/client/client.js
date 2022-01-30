@@ -14,7 +14,7 @@ import State from "./state.js";
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
 
-const COMMAND_BUFFER_LENGTH = 1;
+const COMMAND_BUFFER_LENGTH = 3;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1570,7 +1570,7 @@ function setSpriteVisibility(sprite, visible) {
             processMessages(message);
             console.log("done");
         }
-    }, 500);
+    }, 2000);
 })();
 
 //#endregion
