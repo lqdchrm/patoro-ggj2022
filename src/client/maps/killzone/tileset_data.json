@@ -15,7 +15,7 @@
                 {
                  "name":"type",
                  "type":"string",
-                 "value":"blocker"
+                 "value":"hole"
                 }]
         }, 
         {
@@ -25,6 +25,15 @@
                  "name":"type",
                  "type":"string",
                  "value":"spawn"
+                }]
+        }, 
+        {
+         "id":3,
+         "properties":[
+                {
+                 "name":"type",
+                 "type":"string",
+                 "value":"wall"
                 }]
         }, 
         {
