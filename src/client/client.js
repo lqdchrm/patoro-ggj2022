@@ -341,9 +341,11 @@ let viewModel = new class ViewModel {
         return spawnPoint;
     }
 
-    addNewPlayer(id) {
+    addNewPlayer(id, serverState) {
         let spawnPoint = this.calcSpawnPoint(id);
         this.players[id] = new PlayerViewModel(id, spawnPoint);
+        if (serverState.players[id].diedInRound !== null)
+            this.players[id].sprite.classList.add('dead');
     }
 
     removePlayer(id) {
@@ -503,6 +505,9 @@ let viewModel = new class ViewModel {
         // update moves
         let allPlayers = Object.keys(serverState.players).sort().map(id => serverState.players[id]);
 
+        // set all dead players
+        allPlayers.filter(x => x.diedInRound !== null & x.diedInRound <= serverState.round).forEach(player => this.players[player.id].sprite.classList.add("dead"));
+
         for (let round = this.state.round; round < serverState.round; ++round) {
             allPlayers.forEach(player => {
                 let move = round < player.commands.length ? player.commands[round] : null;
@@ -510,9 +515,7 @@ let viewModel = new class ViewModel {
                     this.handleMove(viewModel.map, player, move);
                 }
 
-                if (player.diedInRound !== null) {
-                    this.players[player.id].sprite.classList.add("dead");
-                }
+               
             });
             viewModel.fireballList.forEach((fireball, index, list) => {
                 var x = Number(fireball.style.getPropertyValue('--x'));
@@ -1551,7 +1554,7 @@ function setSpriteVisibility(sprite, visible) {
     connectToServer();
     setInterval(() => {
         let round = theBigMessageBuffer.length ? theBigMessageBuffer[0].data.round : -1;
-        while(theBigMessageBuffer.length) {
+        while (theBigMessageBuffer.length) {
             var message = theBigMessageBuffer.shift();
 
             if (message.data.round > round)
