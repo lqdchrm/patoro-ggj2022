@@ -21,18 +21,18 @@
         </div>
 
         <div id="controls" class="ui">
-            <button id="left" class="command">LEFT</button>
-            <button id="right" class="command">RIGHT</button>
-            <button id="up" class="command">UP</button>
-            <button id="down" class="command">DOWN</button>
-            <button id="hole" class="command">HOLE</button>
-            <button id="fill" class="command">FILL</button>
-            <button id="skip" class="command">SKIP</button>
-            <button id="turn_left" class="command">TURN LEFT</button>
-            <button id="turn_right" class="command">TURN RIGHT</button>
-            <button id="fire" class="uiCommand">! FIRE !</button>
-            <button id="commit" class="uiCommand">COMMIT</button>
-            <button id="undo" class="uiCommand">UNDO</button>
+            <button id="left" class="command">LEFT<div><small>[a]</small></div></button>
+            <button id="up" class="command">UP<div><small>[w]</small></div></button>
+            <button id="right" class="command">RIGHT<div><small>[d]</small></div></button>
+            <button id="down" class="command">DOWN<div><small>[s]</small></div></button>
+            <button id="hole" class="command">HOLE<div><small>[r]</small></div></button>
+            <button id="fill" class="command">FILL<div><small>[f]</small></div></button>
+            <button id="skip" class="command">SKIP<div><small>[ctrl]</small></div></button>
+            <button id="turn_left" class="command">TURN LEFT<div><small>[q]</small></div></button>
+            <button id="turn_right" class="command">TURN RIGHT<div><small>[e]</small></div></button>
+            <button id="fire" class="command">! FIRE !<div><small>[space]</small></div></button>
+            <button id="commit" class="uiCommand">COMMIT<div><small>[enter]</small></div></button>
+            <button id="undo" class="uiCommand">UNDO<div><small>[back]</small></div></button>
         </div>
 
         <div class="spacer"></div>
@@ -42,7 +42,7 @@
         </div>
     </div>
 
-    <div id="main">
+    <div id="main" tabindex="0">
         <div class="scrollbox" style="z-index: 1;">
             <div id="map"></div>
         </div>

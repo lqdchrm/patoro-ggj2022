@@ -27,9 +27,9 @@ class PlayerViewModel {
     constructor(id, spawnPoint) {
         this.id = id;
         this.falling_counter = 0;
-        this.laser_loading = 0;
-        this.spawnPoint = spawnPoint;
-        this.deaths = 0;
+        this.reloading       = 1;
+        this.spawnPoint      = spawnPoint;
+        this.deaths          = 0;
 
         const spawnType = getDataLayerInfo(this.spawnPoint.x,this.spawnPoint.y);
         let direction = undefined;
@@ -137,16 +137,6 @@ let viewModel = new class ViewModel {
         }
     }
     */
-    fire() {
-        if (this.commandBuffer.length < 3) {
-            this.commandBuffer.push('fire');
-            this.commandBuffer.push('fire');
-            this.commandBuffer.push('fire');
-            if (this.commandBuffer.length == 5) {
-                socket.emit("command", this.commandBuffer);
-            }
-        }
-    }
 
     undo() {
         if (this.commandBuffer.length) {
@@ -467,17 +457,16 @@ let viewModel = new class ViewModel {
                 }
                 break;
             case 'fire':
-                local_player.laser_loading += 1;
-                if (local_player.laser_loading == 3) {
-                    local_player.laser_loading = 0;
+                local_player.reloading -= 1;
+                fire_button.textContent = "reload " + (local_player.reloading - 1);
+                if (local_player.reloading == 1) {
+                    fire_button.textContent = "FIRE !!!";
+                } else if (local_player.reloading < 1) {
+                    local_player.reloading = 4;
+                    fire_button.textContent = "reload " + (local_player.reloading - 1);
                     var fireball = createSprite("fireball", local_player.x, local_player.y);
-                    setSpriteVisibility(fireball, true);
-                    var x = Number(fireball.style.getPropertyValue('--x'));
-                    var y = Number(fireball.style.getPropertyValue('--y'));
-                    var direction = getSpriteDirection(local_player.sprite);
-                    var move = directionToVector(direction);
-                    var new_position = { x: x + move.x, y: y + move.y };
-                    setSpritePos(fireball, new_position, direction);
+                    setSpritePos(fireball, {x: local_player.x, y: local_player.y},
+                                 getSpriteDirection(local_player.sprite));
                     viewModel.fireballList.push(fireball);
                 }
                 break;
@@ -526,7 +515,7 @@ let viewModel = new class ViewModel {
                 var y = Number(fireball.style.getPropertyValue('--y'));
                 var direction = getSpriteDirection(fireball);
                 var move = directionToVector(direction);
-                var new_position = { x: x + move.x, y: y + move.y };
+                var new_position = {x: x + move.x, y: y + move.y};
                 if (new_position.x < 0 || new_position.x > viewModel.map.width - 1
                     || new_position.y < 0 || new_position.y > viewModel.map.height - 1) {
                     list.splice(index, 1);
@@ -563,7 +552,6 @@ let viewModel = new class ViewModel {
         switch (cmd) {
             case 'undo': this.undo(); break;
             case 'commit': this.commit(); break;
-            case 'fire': this.fire(); break;
             default: throw new Error("Unknown uiAction");
         }
     }
@@ -619,7 +607,9 @@ let viewModel = new class ViewModel {
 var form = document.getElementById('form');
 var input = document.getElementById('input');
 var name_change_input = document.getElementById('name_change_input');
+var fire_button = document.getElementById('fire');
 
+var uiMain = document.getElementById('main');
 var uiMessages = document.getElementById('messages');
 var uiUserId = document.getElementById('userId');
 var uiRound = document.getElementById('round');
@@ -687,6 +677,27 @@ document.querySelectorAll(".uiCommand").forEach(cmd => {
     cmd.addEventListener("click", () => {
         viewModel.uiAction(cmd.id);
     });
+});
+
+// keyboard handling
+const keyMap = {
+    "w": { action: () => viewModel.move("up") },
+    "a": { action: () => viewModel.move("left") },
+    "s": { action: () => viewModel.move("down") },
+    "d": { action: () => viewModel.move("right") },
+    "q": { action: () => viewModel.move("turn_left") },
+    "e": { action: () => viewModel.move("turn_right") },
+    " ": { action: () => viewModel.uiAction("fire") },
+    "r": { action: () => viewModel.move("hole") },
+    "f": { action: () => viewModel.move("fill") },
+    "Enter": { action: () => viewModel.uiAction("commit") },
+    "Backspace": { action: () => viewModel.uiAction("undo") },
+    "Control": { action: () => viewModel.move("skip") },
+};
+
+uiMain.addEventListener('keyup', (evt) => {
+    evt.preventDefault();
+    keyMap[evt.key]?.action();
 });
 
 // round
