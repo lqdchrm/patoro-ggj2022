@@ -30,6 +30,7 @@ class PlayerViewModel {
         this.id = id;
         this.falling_counter = 0;
         this.reloading = 1;
+        this.hasSuperPower = false;
         this.spawnPoint = spawnPoint;
         this.deaths = 0;
 
@@ -61,9 +62,18 @@ class PlayerViewModel {
         x += movement.x;
         y += movement.y;
 
+        console.log(y);
+        if (x < 0) x = map.width - 1;
+        if (x >= map.width) x = 0;
+        if (y < 0) y = map.height - 1;
+        if (y >= map.height) y = 0;
+
         var tile = getDataLayerInfo(x, y);
         if (tile == 'wall') {
             return;
+        }
+        if (tile == 'powerup') {
+            this.hasSuperPower = true;
         }
 
         if (x >= 0 && x < map.width && y >= 0 && y < map.height) {
@@ -108,7 +118,6 @@ let viewModel = new class ViewModel {
 
         this.commandBuffer = [];
         this.timer = null;
-        this.timerValue = null;
         this.fireballList = [];
 
         /**@type {HTMLDivElement[]} */
@@ -145,6 +154,14 @@ let viewModel = new class ViewModel {
     }
 
     move(command) {
+        if (this.timer) {
+            clearTimeout(this.timer);
+            this.timer = null;
+        }
+        this.timer = setTimeout(() => {
+            this.move('skip');
+        }, 3000);
+
         this.commandBuffer.push(command);
         if (this.commandBuffer.length == COMMAND_BUFFER_LENGTH) {
             var send_commands = this.commandBuffer.splice(0, 1);
@@ -160,26 +177,6 @@ let viewModel = new class ViewModel {
         });
     }
 
-    checkForMoveNotification() {
-        // if (!this._hurryTimer) { this._hurryTimer = null; }
-        // let players = Object.values(this.state.players);
-        // if (players.length > 1) {
-        //     let playerWithoutMoves = players.filter(p =>
-        //         (p.id !== socket.id) &&
-        //         (p.diedInRound === null) &&
-        //         (p.commands.length - this.state.round === 0)
-        //     );
-
-        //     if (playerWithoutMoves.length == 0 && this.commandBuffer.length == 0) {
-        //         if (!this._hurryTimer) {
-        //             this._hurryTimer = setTimeout(() => {
-        //                 showNotification("Hurry Up!!", 1500);
-        //                 this._hurryTimer = null;
-        //             }, 10000);
-        //         }
-        //     }
-        // }
-    }
     updateMarker() {
         const unknwoncommands = [];
         const currentPlayer = this.players[socket.id];
@@ -343,7 +340,6 @@ let viewModel = new class ViewModel {
             }
 
         }
-        // setSpritePos(this.markers[0], vector, getDirectionsFromCommands(commands.length - 1))
         this.markers = [...usedMarkers, ...this.markers];
 
         if (unknwoncommands.length > 0) {
@@ -495,10 +491,30 @@ let viewModel = new class ViewModel {
                 } else if (local_player.reloading < 1) {
                     local_player.reloading = 4;
                     fire_button_text.textContent = "Reload " + (local_player.reloading - 1);
+                    if (local_player.hasSuperPower)
+                    {
+                        local_player.hasSuperPower = false;
+                        var direction = getSpriteDirection(local_player.sprite)
+                        var move  = directionToVector(direction);
+                        var left  = {x: move.y, y: -1 * move.x};
+                        var right = {x: -left.x, y: -left.y};
+                        var start = {x: local_player.x + 5*left.x, y: local_player.y + 5*left.y};
+                        for (let i = -5; i <= 5; i++)
+                        {
+                            var fireball  = createSprite("fireball", local_player.x, local_player.y);
+                            setSpritePos(fireball, { x: start.x, y: start.y }, direction);
+                            start.x += right.x;
+                            start.y += right.y;
+                            viewModel.fireballList.push(fireball);
+                        }
+                    }
+                    else
+                    {
                     var fireball = createSprite("fireball", local_player.x, local_player.y);
                     setSpritePos(fireball, { x: local_player.x, y: local_player.y },
                         getSpriteDirection(local_player.sprite));
                     viewModel.fireballList.push(fireball);
+                    }
                 }
                 break;
             default:
@@ -536,17 +552,20 @@ let viewModel = new class ViewModel {
                     this.handleMove(viewModel.map, player, move);
                 }
 
-               
+
             });
+            let to_be_removed = [];
             viewModel.fireballList.forEach((fireball, index, list) => {
-                var x = Number(fireball.style.getPropertyValue('--x'));
-                var y = Number(fireball.style.getPropertyValue('--y'));
-                var direction = getSpriteDirection(fireball);
-                var move = directionToVector(direction);
-                var new_position = { x: x + move.x, y: y + move.y };
+                let x = Number(fireball.style.getPropertyValue('--x'));
+                let y = Number(fireball.style.getPropertyValue('--y'));
+                let direction = getSpriteDirection(fireball);
+                let move = directionToVector(direction);
+                let new_position = { x: x + move.x, y: y + move.y };
+                let tile = getDataLayerInfo(x, y);
                 if (new_position.x < 0 || new_position.x > viewModel.map.width - 1
-                    || new_position.y < 0 || new_position.y > viewModel.map.height - 1) {
-                    list.splice(index, 1);
+                    || new_position.y < 0 || new_position.y > viewModel.map.height - 1
+                    || tile == 'wall') {
+                    to_be_removed.unshift(index);
                     fireball.remove();
                 }
                 else {
@@ -554,14 +573,15 @@ let viewModel = new class ViewModel {
                 }
                 Object.keys(this.players).forEach(player_id => {
                     var player = this.players[player_id];
-                    var player_x = Number(player.sprite.style.getPropertyValue('--x'));
-                    var player_y = Number(player.sprite.style.getPropertyValue('--y'));
                     if (new_position.x == player.x && new_position.y == player.y) {
                         player.die();
-                        list.splice(index, 1);
+                        to_be_removed.unshift(index);
                         fireball.remove();
                     }
                 });
+            });
+            to_be_removed.forEach((index) => {
+                viewModel.fireballList.splice(index, 1);
             });
         }
 
@@ -587,7 +607,6 @@ let viewModel = new class ViewModel {
         this.updateUiPlayerList();
         this.updateMarker();
         this.updatePlayerNames();
-        this.checkForMoveNotification();
     }
 
     updateUiPlayerList() {
@@ -775,100 +794,63 @@ var theBigMessageBuffer = [];
 
 function connectToServer() {
     socket = io();
-    socket.onAny((message, ...args) => {
-        console.log("received " + message);
-        theBigMessageBuffer.push({ type: message, data: args[0] });
+
+    socket.onAny((type, data) => {
+        console.log("received " + type);
+        let packet = { type, data };
+        if (type === 'update') {
+            theBigMessageBuffer.push(packet);
+        } else {
+            processMessages(packet);
+        }
+    });
+
+    // on connect
+    socket.on('connect', () => {
+        console.log(`[IO] Connected`);
+        viewModel.id = socket.id;
+        viewModel.messages.push(`Connected to Server`);
+
+        let name = localStorage.getItem("playerName");
+        if (name) {
+            socket.emit("name change message", name);
+        }
+    });
+
+    // on disconnect
+    socket.on('disconnect', (reason) => {
+        console.log(`[IO] Disconnected: ${reason}`);
+        viewModel.messages.push(`Disconnected from Server: ${reason}`);
+        if (reason === "io server disconnect") {
+            // the disconnection was initiated by the server, you need to reconnect manually
+            socket.connect();
+        }
     });
 }
 
-function processMessages(msg) {
-    var type = msg.type;
-    var message = msg.data;
+function processMessages({type, data}) {
 
-    console.log(`[IO] Received ${type} ${message}: `);
+    console.log(`[IO] Received ${type} ${data}: `);
     switch (type) {
-        // on connect
-        case 'connect':
-            {
-                console.log(`[IO] Connected`);
-                viewModel.id = socket.id;
-                viewModel.messages.push(`Connected to Server`);
-
-                let name = localStorage.getItem("playerName");
-                if (name) {
-                    socket.emit("name change message", name);
-                }
-            } break;
-
-        // on disconnect
-        case 'disconnect':
-            {
-                console.log(`[IO] Disconnected: ${reason}`);
-                viewModel.messages.push(`Disconnected from Server: ${reason}`);
-                if (reason === "io server disconnect") {
-                    // the disconnection was initiated by the server, you need to reconnect manually
-                    socket.connect();
-                }
-            } break;
-
-        // log everything
         // handle chat messages
         case 'chat message': {
-            var [from, msg] = message;
-            let text = `${from}: ${msg}`;
+            var {from, msg} = data;
+            let sender = viewModel.state.players[from];
+            let text = `${sender?.name ?? from}: ${msg}`;
             viewModel.messages.push(text);
-            showNotification(text, 1000);
+            // showNotification(text, 1000);
         } break;
 
+        // update logic
         case 'update': {
-            var serverState = message;
+            var serverState = data;
             console.log("[SERVER STATE]: ", serverState);
             viewModel.update(serverState);
             console.log("[STATE]: ", viewModel.state);
         } break;
     }
-
-    //    // on connect
-    //    socket.on('connect', () => {
-    //        console.log(`[IO] Connected`);
-    //        viewModel.id = socket.id;
-    //        viewModel.messages.push(`Connected to Server`);
-    //
-    //        let name = localStorage.getItem("playerName");
-    //        if (name) {
-    //            socket.emit("name change message", name);
-    //        }
-    //    });
-    //    }
-    //
-    //    // on disconnect
-    //    socket.on('disconnect', (reason) => {
-    //        console.log(`[IO] Disconnected: ${reason}`);
-    //        viewModel.messages.push(`Disconnected from Server: ${reason}`);
-    //        if (reason === "io server disconnect") {
-    //            // the disconnection was initiated by the server, you need to reconnect manually
-    //            socket.connect();
-    //        }
-    //    });
-    //
-    //    // log everything
-    //    socket.onAny((message, ...args) => {
-    //        console.log(`[IO] Received ${message}: `, ...args);
-    //    });
-    //
-    //    // handle chat messages
-    //    socket.on('chat message', function ({ from, msg }) {
-    //        let text = `${from}: ${msg}`;
-    //        viewModel.messages.push(text);
-    //        showNotification(text, 1000);
-    //    });
-    //
-    //    socket.on('update', (serverState) => {
-    //        console.log("[SERVER STATE]: ", serverState);
-    //        viewModel.update(serverState);
-    //        console.log("[STATE]: ", viewModel.state);
-    //    })
 }
+
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1402,6 +1384,8 @@ function getDataLayerInfo(x, y) {
             return 'fall';
         case 'wall':
             return 'wall';
+        case 'powerup':
+            return 'powerup';
 
         default:
             console.error('Tiletype undefined', tileIndex);
