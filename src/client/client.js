@@ -29,26 +29,11 @@ class PlayerViewModel {
     constructor(id, spawnPoint) {
         this.id = id;
         this.falling_counter = 0;
-        this.reloading       = 1;
-        this.spawnPoint      = spawnPoint;
-        this.deaths          = 0;
+        this.reloading = 1;
+        this.spawnPoint = spawnPoint;
+        this.deaths = 0;
 
-        const spawnType = getDataLayerInfo(this.spawnPoint.x,this.spawnPoint.y);
-        let direction = undefined;
-        if(spawnType == "spawn-down"){
-            direction = 'down';
-        }
-        else if(spawnType == "spawn-right"){
-            direction = 'right';
-        }
-        else if(spawnType == "spawn-left"){
-            direction = 'left';
-        }
-        else if(spawnType == "spawn-up"){
-            direction = 'up';
-        }
-
-        this.sprite = createSprite('robot', this.spawnPoint.x, this.spawnPoint.y, id, id === socket.id, direction);
+        this.sprite = createSprite('robot', this.spawnPoint.x, this.spawnPoint.y, id, id === socket.id, this.getSpawnpintDirection(this.spawnPoint));
         this.renderPromise = Promise.resolve();
     }
 
@@ -82,7 +67,27 @@ class PlayerViewModel {
     die() {
         var new_spawn = viewModel.calcSpawnPoint(this.id);
         this.deaths += 1;
-        setSpritePos(this.sprite, { x: new_spawn.x, y: new_spawn.y }, 'down');
+        setSpritePos(this.sprite, { x: new_spawn.x, y: new_spawn.y }, this.getSpawnpintDirection(this.spawnPoint));
+    }
+
+    getSpawnpintDirection(spawnpoint) {
+
+        const spawnType = getDataLayerInfo(spawnpoint.x, spawnpoint.y);
+        let direction = undefined;
+        if (spawnType == "spawn-down") {
+            direction = 'down';
+        }
+        else if (spawnType == "spawn-right") {
+            direction = 'right';
+        }
+        else if (spawnType == "spawn-left") {
+            direction = 'left';
+        }
+        else if (spawnType == "spawn-up") {
+            direction = 'up';
+        }
+        return direction;
+
     }
 }
 
@@ -439,8 +444,8 @@ let viewModel = new class ViewModel {
                     local_player.reloading = 4;
                     fire_button_text.textContent = "Reload " + (local_player.reloading - 1);
                     var fireball = createSprite("fireball", local_player.x, local_player.y);
-                    setSpritePos(fireball, {x: local_player.x, y: local_player.y},
-                                 getSpriteDirection(local_player.sprite));
+                    setSpritePos(fireball, { x: local_player.x, y: local_player.y },
+                        getSpriteDirection(local_player.sprite));
                     viewModel.fireballList.push(fireball);
                 }
                 break;
@@ -485,7 +490,7 @@ let viewModel = new class ViewModel {
                 var y = Number(fireball.style.getPropertyValue('--y'));
                 var direction = getSpriteDirection(fireball);
                 var move = directionToVector(direction);
-                var new_position = {x: x + move.x, y: y + move.y};
+                var new_position = { x: x + move.x, y: y + move.y };
                 if (new_position.x < 0 || new_position.x > viewModel.map.width - 1
                     || new_position.y < 0 || new_position.y > viewModel.map.height - 1) {
                     list.splice(index, 1);
@@ -1273,7 +1278,7 @@ function getDataLayerInfo(x, y) {
     const [, tileIndex] = currentTile;
 
     const property = datatileset.tiles[tileIndex]?.properties;
-    if(!property){
+    if (!property) {
         return 'none'
     }
     const type = property['type']?.value;
