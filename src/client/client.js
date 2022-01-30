@@ -366,6 +366,9 @@ let viewModel = new class ViewModel {
 
                     }
                     break;
+                case 'fire':
+                    getcurserSprite('cursor-fire', vector, getDirectionsFromCommands(index));
+                    break;
                 default:
                     break;
             }
@@ -525,29 +528,26 @@ let viewModel = new class ViewModel {
                 } else if (local_player.reloading < 1) {
                     local_player.reloading = 4;
                     fire_button_text.textContent = "Reload " + (local_player.reloading - 1);
-                    if (local_player.hasSuperPower)
-                    {
+                    if (local_player.hasSuperPower) {
                         local_player.hasSuperPower = false;
                         var direction = getSpriteDirection(local_player.sprite)
-                        var move  = directionToVector(direction);
-                        var left  = {x: move.y, y: -1 * move.x};
-                        var right = {x: -left.x, y: -left.y};
-                        var start = {x: local_player.x + 5*left.x, y: local_player.y + 5*left.y};
-                        for (let i = -5; i <= 5; i++)
-                        {
-                            var fireball  = createSprite("fireball", local_player.x, local_player.y);
+                        var move = directionToVector(direction);
+                        var left = { x: move.y, y: -1 * move.x };
+                        var right = { x: -left.x, y: -left.y };
+                        var start = { x: local_player.x + 5 * left.x, y: local_player.y + 5 * left.y };
+                        for (let i = -5; i <= 5; i++) {
+                            var fireball = createSprite("fireball", local_player.x, local_player.y);
                             setSpritePos(fireball, { x: start.x, y: start.y }, direction);
                             start.x += right.x;
                             start.y += right.y;
                             viewModel.fireballList.push(fireball);
                         }
                     }
-                    else
-                    {
-                    var fireball = createSprite("fireball", local_player.x, local_player.y);
-                    setSpritePos(fireball, { x: local_player.x, y: local_player.y },
-                        getSpriteDirection(local_player.sprite));
-                    viewModel.fireballList.push(fireball);
+                    else {
+                        var fireball = createSprite("fireball", local_player.x, local_player.y);
+                        setSpritePos(fireball, { x: local_player.x, y: local_player.y },
+                            getSpriteDirection(local_player.sprite));
+                        viewModel.fireballList.push(fireball);
                     }
                 }
                 break;
@@ -862,13 +862,13 @@ function connectToServer() {
     });
 }
 
-function processMessages({type, data}) {
+function processMessages({ type, data }) {
 
     console.log(`[IO] Received ${type} ${data}: `);
     switch (type) {
         // handle chat messages
         case 'chat message': {
-            var {from, msg} = data;
+            var { from, msg } = data;
             let sender = viewModel.state.players[from];
             let text = `${sender?.name ?? from}: ${msg}`;
             viewModel.messages.push(text);
