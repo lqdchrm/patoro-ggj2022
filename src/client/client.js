@@ -110,9 +110,6 @@ let viewModel = new class ViewModel {
     async init() {
         this.map = await loadMap("gannter", "./maps/killzone");
         await updateMap();
-        setInterval(function () {
-            socket.emit("command", this.commandBuffer);
-        }, 25);
     }
 
     undo() {
