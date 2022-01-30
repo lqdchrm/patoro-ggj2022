@@ -33,8 +33,9 @@ class PlayerViewModel {
         this.spawnPoint = spawnPoint;
         this.deaths = 0;
 
+        this.uiCommandBuffer = [];
+
         this.sprite = createSprite('robot', this.spawnPoint.x, this.spawnPoint.y, id, id === socket.id, this.getSpawnpintDirection(this.spawnPoint));
-        this.renderPromise = Promise.resolve();
     }
 
     setName(name) {
@@ -115,6 +116,9 @@ let viewModel = new class ViewModel {
         this.state = State.getState();  // game state
     }
 
+    get meVM() { return this.players[socket.id]; }
+    get meState() { return this.state.players[socket.id]; }
+
     async init() {
         this.map = await loadMap("gannter", "./maps/killzone");
         await updateMap();
@@ -139,7 +143,7 @@ let viewModel = new class ViewModel {
         if (this.commandBuffer.length == COMMAND_BUFFER_LENGTH) {
             var send_commands = this.commandBuffer.splice(0, 1);
             socket.emit("command", send_commands);
-            this.state.players[socket.id].commands.push(...send_commands);
+            this.meVM.uiCommandBuffer.push(...send_commands);
         }
         this.updateMarker();
     }
@@ -185,8 +189,8 @@ let viewModel = new class ViewModel {
         this.markers.forEach(x => setSpriteVisibility(x, false))
         const vector = { x: currentPlayer.x, y: currentPlayer.y };
 
-        const commands = [...this.state.players[socket.id].commands.slice(this.state.round), ...this.commandBuffer];
-
+        // const commands = [...this.state.players[socket.id].commands.slice(this.state.round), ...this.commandBuffer];
+        const commands = [...this.meVM.uiCommandBuffer.slice(this.state.round), ...this.commandBuffer];
 
         function getDirectionsFromCommands(index) {
             if (index < 0)
