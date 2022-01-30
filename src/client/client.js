@@ -17,6 +17,40 @@ import State from "./state.js";
 const COMMAND_BUFFER_LENGTH = 1;
 const NETWORK_INTERVAL = 500;
 
+const randomNames = [
+    "Kani",
+    "Xily",
+    "Laniea Lira",
+    "Tr'Kzeno",
+    "Mori",
+    "R'Maza",
+    "M'Vaadward",
+    "Sc'Jate",
+    "Zuru",
+    "Tevoo",
+    "Pequarr",
+    "Dessi",
+    "Cori Sheana",
+    "Yetrois",
+    "Ucran Udoss",
+    "Telle Iven",
+    "Kz'Usken",
+    "Kera",
+    "Magga",
+    "D'Keni",
+    "Forma",
+    "L'Tenii",
+    "O'Cybe",
+    "V'Barkyo",
+    "Cargga",
+    "Dari",
+    "Otar Wachu",
+    "Ilan",
+    "N'Soro",
+    "Bari",
+];
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // ██╗   ██╗██╗███████╗██╗    ██╗███╗   ███╗ ██████╗ ██████╗ ███████╗██╗
 // ██║   ██║██║██╔════╝██║    ██║████╗ ████║██╔═══██╗██╔══██╗██╔════╝██║
@@ -148,7 +182,7 @@ let viewModel = new class ViewModel {
 
     commit() {
         let missingMsgs = COMMAND_BUFFER_LENGTH - this.commandBuffer.length;
-        for (let i=0; i<missingMsgs; ++i) {
+        for (let i = 0; i < missingMsgs; ++i) {
             this.move('skip');
         }
     }
@@ -811,7 +845,7 @@ function connectToServer() {
         viewModel.id = socket.id;
         viewModel.messages.push(`Connected to Server`);
 
-        let name = localStorage.getItem("playerName");
+        let name = localStorage.getItem("playerName") ?? randomNames[Math.floor(randomNames.length * Math.random())];
         if (name) {
             socket.emit("name change message", name);
         }
