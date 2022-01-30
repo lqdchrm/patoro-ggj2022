@@ -312,9 +312,9 @@ let viewModel = new class ViewModel {
                         } else if (direction == 'down') {
                             candig = setTerainBlock(digPosition.x - 1, digPosition.y, 3, 2, c == 'hole' ? 'hole2' : 'floor', true)
                         } else if (direction == 'left') {
-                            candig = setTerainBlock(digPosition.x - 1, digPosition.y - 1, 3, 2, c == 'hole' ? 'hole2' : 'floor', true)
+                            candig = setTerainBlock(digPosition.x - 1, digPosition.y - 1, 2, 3, c == 'hole' ? 'hole2' : 'floor', true)
                         } else if (direction == 'right') {
-                            candig = setTerainBlock(digPosition.x, digPosition.y - 1, 3, 2, c == 'hole' ? 'hole2' : 'floor', true)
+                            candig = setTerainBlock(digPosition.x, digPosition.y - 1, 2, 3, c == 'hole' ? 'hole2' : 'floor', true)
 
                         }
 
