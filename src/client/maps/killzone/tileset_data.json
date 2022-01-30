@@ -26,6 +26,62 @@
                  "type":"string",
                  "value":"spawn"
                 }]
+        }, 
+        {
+         "id":4,
+         "properties":[
+                {
+                 "name":"direction",
+                 "type":"string",
+                 "value":"up"
+                }, 
+                {
+                 "name":"type",
+                 "type":"string",
+                 "value":"spawn"
+                }]
+        }, 
+        {
+         "id":5,
+         "properties":[
+                {
+                 "name":"direction",
+                 "type":"string",
+                 "value":"down"
+                }, 
+                {
+                 "name":"type",
+                 "type":"string",
+                 "value":"spawn"
+                }]
+        }, 
+        {
+         "id":6,
+         "properties":[
+                {
+                 "name":"direction",
+                 "type":"string",
+                 "value":"right"
+                }, 
+                {
+                 "name":"type",
+                 "type":"string",
+                 "value":"spawn"
+                }]
+        }, 
+        {
+         "id":7,
+         "properties":[
+                {
+                 "name":"direction",
+                 "type":"string",
+                 "value":"left"
+                }, 
+                {
+                 "name":"type",
+                 "type":"string",
+                 "value":"spawn"
+                }]
         }],
  "tilewidth":32,
  "type":"tileset",
