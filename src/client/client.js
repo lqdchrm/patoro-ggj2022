@@ -27,8 +27,9 @@ class PlayerViewModel {
     constructor(id, spawnPoint) {
         this.id = id;
         this.falling_counter = 0;
-        this.laser_loading = 0;
-        this.spawnPoint = spawnPoint;
+        this.laser_loading   = 0;
+        this.spawnPoint      = spawnPoint;
+        this.deaths          = 0;
 
         this.sprite = createSprite('robot', this.spawnPoint.x, this.spawnPoint.y, id, id === socket.id);
         this.renderPromise = Promise.resolve();
@@ -59,6 +60,12 @@ class PlayerViewModel {
         if (x >= 0 && x < map.width && y >= 0 && y < map.height) {
             setSpritePos(this.sprite, { x: x, y: y }, move ?? 'skip');
         }
+    }
+
+    die() {
+        var new_spawn = viewModel.calcSpawnPoint(this.id);
+        this.deaths += 1;
+        setSpritePos(this.sprite, { x: new_spawn.x, y: new_spawn.y }, 'down');
     }
 }
 
@@ -115,11 +122,11 @@ let viewModel = new class ViewModel {
         }
     }
     */
-    fire_laser() {
+    fire() {
         if (this.commandBuffer.length < 3) {
-            this.commandBuffer.push('fire_laser');
-            this.commandBuffer.push('fire_laser');
-            this.commandBuffer.push('fire_laser');
+            this.commandBuffer.push('fire');
+            this.commandBuffer.push('fire');
+            this.commandBuffer.push('fire');
             if (this.commandBuffer.length == 5) {
                 socket.emit("command", this.commandBuffer);
             }
@@ -148,6 +155,33 @@ let viewModel = new class ViewModel {
             this.commandBuffer.splice(0, this.commandBuffer.length);
         }
         this.updateMarker();
+    }
+
+    updatePlayerNames() {
+        Object.values(this.state.players).filter(p => p.diedInRound === null).forEach(player => {
+            this.players[player.id].setName(player.name);
+        });
+    }
+
+    checkForMoveNotification() {
+        if (!this._hurryTimer) { this._hurryTimer = null; }
+        let players = Object.values(this.state.players);
+        if (players.length > 1) {
+            let playerWithoutMoves = players.filter(p =>
+                (p.id !== socket.id) &&
+                (p.diedInRound === null) &&
+                (p.commands.length - this.state.round === 0)
+            );
+
+            if (playerWithoutMoves.length == 0 && this.commandBuffer.length == 0) {
+                if (!this._hurryTimer) {
+                    this._hurryTimer = setTimeout(() => {
+                        showNotification("Hurry Up!!", 1500);
+                        this._hurryTimer = null;
+                    }, 10000);
+                }
+            }
+        }
     }
 
     updateMarker() {
@@ -316,8 +350,7 @@ let viewModel = new class ViewModel {
             if (local_player.falling_counter == 3) {
                 local_player.falling_counter = 0;
                 local_player.sprite.style.transform = 'scale(1)';
-                var new_spawn = this.calcSpawnPoint(local_player.id);
-                setSpritePos(local_player.sprite, { x: new_spawn.x, y: new_spawn.y }, move ?? local_player.direction);
+                local_player.die();
             }
             return;
         }
@@ -417,7 +450,7 @@ let viewModel = new class ViewModel {
                         setTerainBlock(...param, 'hole2');
                 }
                 break;
-            case 'fire_laser':
+            case 'fire':
                 local_player.laser_loading += 1;
                 if (local_player.laser_loading == 3) {
                     local_player.laser_loading = 0;
@@ -488,13 +521,19 @@ let viewModel = new class ViewModel {
                 {
                     setSpritePos(fireball, new_position);
                 }
+                Object.keys(this.players).forEach(player_id => {
+                    var player = this.players[player_id];
+                    var player_x = Number(player.sprite.style.getPropertyValue('--x'));
+                    var player_y = Number(player.sprite.style.getPropertyValue('--y'));
+                    if (new_position.x == player.x && new_position.y == player.y)
+                    {
+                        player.die();
+                        list.splice(index, 1);
+                        fireball.remove();
+                    }
+                });
             });
         }
-
-        // updateNames
-        allPlayers.forEach(player => {
-            this.players[player.id].setName(player.name);
-        });
 
         // store state
         this.state = serverState;
@@ -511,7 +550,7 @@ let viewModel = new class ViewModel {
         switch (cmd) {
             case 'undo': this.undo(); break;
             case 'commit': this.commit(); break;
-            case 'fire_laser': this.fire_laser(); break;
+            case 'fire': this.fire(); break;
             default: throw new Error("Unknown uiAction");
         }
     }
@@ -519,7 +558,8 @@ let viewModel = new class ViewModel {
     updateUi() {
         this.updateUiPlayerList();
         this.updateMarker();
-
+        this.updatePlayerNames();
+        this.checkForMoveNotification();
     }
 
     updateUiPlayerList() {
@@ -528,15 +568,16 @@ let viewModel = new class ViewModel {
         var live_player_ids = Object.keys(players).filter(p_id => players[p_id].diedInRound === null);
         live_player_ids.forEach(player_id => {
             var player = this.state.players[player_id];
+            var local_player = this.players[player_id];
 
             // add to list
             var item = document.createElement('div');
-            item.classList.add("move_done");
             item.id = player.id;
 
             let moves_left = player.commands.length - this.state.round;
             item.innerHTML = `
                 <span>${player.name}:</span>
+                <span>died: ${local_player.deaths}:</span>
                 <span>${moves_left} moves ahead</span>
             `;
 
@@ -573,6 +614,21 @@ var uiBuffer = document.getElementById('buffer');
 var uiTimer = document.getElementById('timer');
 var player_list = document.getElementById('player_list_div');
 var toast = document.getElementById('toast');
+var toastTimer = null;
+
+function showNotification(text, duration = 1500) {
+    if (toastTimer) {
+        clearTimeout(toastTimer);
+        toastTimer = null;
+    }
+    if (text != null) {
+        toast.innerHTML = text;
+    }
+    toast.className = "show";
+    toastTimer = setTimeout(() => {
+        toast.className = "hide";
+    }, duration);
+}
 
 // chat input box
 form.addEventListener('submit', function (e) {
@@ -1266,10 +1322,10 @@ function createSprite(type, x, y, name, isMe, direction) {
 }
 
 /**
- * 
- * @param {HTMLDivElement} sprite 
- * @param {SpriteTypes} type 
- * @returns 
+ *
+ * @param {HTMLDivElement} sprite
+ * @param {SpriteTypes} type
+ * @returns
  */
 function setSpriteType(sprite, type) {
     if (sprite.classList.contains(type)) {
@@ -1362,8 +1418,7 @@ function setSpriteVisibility(sprite, visible) {
 //#region startup
 
 (async () => {
-    setTimeout(() => { toast.classList.remove("init"); toast.classList.add("show"); }, 2000);
-    setTimeout(() => toast.classList.remove("show"), 3000);
+    setTimeout(() => showNotification(null, 2000), 1000);
     await viewModel.init();
     connectToServer();
 })();

@@ -20,7 +20,7 @@
     background-image: url("fireball.png");
     --sprite-width: 32px;
     --sprite-height: 32px;
-    --frames: 1;
+    --frames: 3;
 }
 
 .sprite.cursor {
@@ -157,7 +157,7 @@
     content: var(--name);
     position: absolute;
     font-size: small;
-    color: yellow;
+    color: var(--theme-hl);
     width: 100%;
     text-align: center;
     top: -15px;
