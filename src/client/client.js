@@ -14,8 +14,8 @@ import State from "./state.js";
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
 
-const COMMAND_BUFFER_LENGTH = 3;
-
+const COMMAND_BUFFER_LENGTH = 1;
+const NETWORK_INTERVAL = 500;
 
 ////////////////////////////////////////////////////////////////////////////////
 // ██╗   ██╗██╗███████╗██╗    ██╗███╗   ███╗ ██████╗ ██████╗ ███████╗██╗
@@ -33,8 +33,9 @@ class PlayerViewModel {
         this.spawnPoint = spawnPoint;
         this.deaths = 0;
 
+        this.uiCommandBuffer = [];
+
         this.sprite = createSprite('robot', this.spawnPoint.x, this.spawnPoint.y, id, id === socket.id, this.getSpawnpintDirection(this.spawnPoint));
-        this.renderPromise = Promise.resolve();
     }
 
     setName(name) {
@@ -59,6 +60,12 @@ class PlayerViewModel {
         var movement = directionToVector(move);
         x += movement.x;
         y += movement.y;
+
+        var tile = getDataLayerInfo(x, y);
+        if (tile == 'wall') {
+            return;
+        }
+
         if (x >= 0 && x < map.width && y >= 0 && y < map.height) {
             setSpritePos(this.sprite, { x: x, y: y }, move ?? 'skip');
         }
@@ -115,6 +122,9 @@ let viewModel = new class ViewModel {
         this.state = State.getState();  // game state
     }
 
+    get meVM() { return this.players[socket.id]; }
+    get meState() { return this.state.players[socket.id]; }
+
     async init() {
         this.map = await loadMap("gannter", "./maps/killzone");
         await updateMap();
@@ -128,7 +138,8 @@ let viewModel = new class ViewModel {
     }
 
     commit() {
-        while (this.commandBuffer.length < COMMAND_BUFFER_LENGTH) {
+        let missingMsgs = COMMAND_BUFFER_LENGTH - this.commandBuffer.length;
+        for (let i=0; i<missingMsgs; ++i) {
             this.move('skip');
         }
     }
@@ -136,9 +147,9 @@ let viewModel = new class ViewModel {
     move(command) {
         this.commandBuffer.push(command);
         if (this.commandBuffer.length == COMMAND_BUFFER_LENGTH) {
-            socket.emit("command", this.commandBuffer);
-            var send_commands = this.commandBuffer.splice(0, this.commandBuffer.length);
-            this.state.players[socket.id].commands.push(...send_commands);
+            var send_commands = this.commandBuffer.splice(0, 1);
+            socket.emit("command", send_commands);
+            this.meVM.uiCommandBuffer.push(...send_commands);
         }
         this.updateMarker();
     }
@@ -184,8 +195,8 @@ let viewModel = new class ViewModel {
         this.markers.forEach(x => setSpriteVisibility(x, false))
         const vector = { x: currentPlayer.x, y: currentPlayer.y };
 
-        const commands = [...this.state.players[socket.id].commands.slice(this.state.round), ...this.commandBuffer];
-
+        // const commands = [...this.state.players[socket.id].commands.slice(this.state.round), ...this.commandBuffer];
+        const commands = [...this.meVM.uiCommandBuffer.slice(this.state.round), ...this.commandBuffer];
 
         function getDirectionsFromCommands(index) {
             if (index < 0)
@@ -557,7 +568,8 @@ let viewModel = new class ViewModel {
         // store state
         this.state = serverState;
 
-        this.state.players
+        // sync commands
+        this.meVM.uiCommandBuffer.splice(0, this.meState.commands.length, ...this.meState.commands);
 
         // update UI
         this.updateUi();
@@ -1572,7 +1584,7 @@ function setSpriteVisibility(sprite, visible) {
             processMessages(message);
             console.log("done");
         }
-    }, 2000);
+    }, NETWORK_INTERVAL);
 })();
 
 //#endregion
