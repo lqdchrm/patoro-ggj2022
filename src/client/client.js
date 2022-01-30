@@ -715,6 +715,13 @@ let socket = null;
 function connectToServer() {
     socket = io();
 
+function processMessages(msg)
+{
+    var type    = msg.type;
+    var message = msg.data;
+
+    console.log(`[IO] Received ${type} ${message}: `);
+    switch (type) {
     // on connect
     socket.on('connect', () => {
         console.log(`[IO] Connected`);
@@ -1425,6 +1432,15 @@ function setSpriteVisibility(sprite, visible) {
     setTimeout(() => showNotification(null, 2000), 1000);
     await viewModel.init();
     connectToServer();
+    setInterval(() => {
+        if (theBigMessageBuffer.length > 0)
+        {
+            var message = theBigMessageBuffer.shift();
+            console.log("processing " + message.type + ". Messages left: " + theBigMessageBuffer.length + " messages");
+            processMessages(message);
+            console.log("done");
+        }
+    }, 500);
 })();
 
 //#endregion
