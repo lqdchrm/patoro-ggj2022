@@ -559,7 +559,8 @@ let viewModel = new class ViewModel {
         // store state
         this.state = serverState;
 
-        this.state.players
+        // sync commands
+        this.meVM.uiCommandBuffer.splice(0, this.meState.commands.length, ...this.meState.commands);
 
         // update UI
         this.updateUi();
