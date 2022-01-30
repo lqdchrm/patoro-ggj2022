@@ -26,6 +26,7 @@
 .sprite.cursor {
     background-image: url("cursor.png");
     --frames: 3;
+    opacity: 0.75;
 }
 
 .sprite.cursor-dig {
