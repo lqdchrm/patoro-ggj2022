@@ -20,7 +20,7 @@
     background-image: url("fireball.png");
     --sprite-width: 32px;
     --sprite-height: 32px;
-    --frames: 1;
+    --frames: 3;
 }
 
 .sprite.cursor {
