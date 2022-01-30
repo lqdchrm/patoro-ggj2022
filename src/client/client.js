@@ -443,12 +443,12 @@ let viewModel = new class ViewModel {
                 break;
             case 'fire':
                 local_player.reloading -= 1;
-                fire_button.textContent = "reload " + (local_player.reloading - 1);
+                fire_button_text.textContent = "Reload " + (local_player.reloading - 1);
                 if (local_player.reloading == 1) {
-                    fire_button.textContent = "FIRE !!!";
+                    fire_button_text.textContent = "FIRE !!!";
                 } else if (local_player.reloading < 1) {
                     local_player.reloading = 4;
-                    fire_button.textContent = "reload " + (local_player.reloading - 1);
+                    fire_button_text.textContent = "Reload " + (local_player.reloading - 1);
                     var fireball = createSprite("fireball", local_player.x, local_player.y);
                     setSpritePos(fireball, {x: local_player.x, y: local_player.y},
                                  getSpriteDirection(local_player.sprite));
@@ -592,7 +592,7 @@ let viewModel = new class ViewModel {
 var form = document.getElementById('form');
 var input = document.getElementById('input');
 var name_change_input = document.getElementById('name_change_input');
-var fire_button = document.getElementById('fire');
+var fire_button_text = document.getElementById('fire-text');
 
 var uiMain = document.getElementById('main');
 var uiMessages = document.getElementById('messages');
@@ -672,12 +672,12 @@ const keyMap = {
     "d": { action: () => viewModel.move("right") },
     "q": { action: () => viewModel.move("turn_left") },
     "e": { action: () => viewModel.move("turn_right") },
-    " ": { action: () => viewModel.uiAction("fire") },
+    " ": { action: () => viewModel.move("fire") },
     "r": { action: () => viewModel.move("hole") },
     "f": { action: () => viewModel.move("fill") },
+    "Control": { action: () => viewModel.move("skip") },
     "Enter": { action: () => viewModel.uiAction("commit") },
     "Backspace": { action: () => viewModel.uiAction("undo") },
-    "Control": { action: () => viewModel.move("skip") },
 };
 
 uiMain.addEventListener('keyup', (evt) => {
