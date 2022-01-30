@@ -148,7 +148,7 @@
 }
 
 .sprite.dead {
-    opacity: 0.3;
+    display: none;
 }
 
 @keyframes player-glow {
