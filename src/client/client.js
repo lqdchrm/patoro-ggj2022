@@ -14,7 +14,7 @@ import State from "./state.js";
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
 
-const COMMAND_BUFFER_LENGTH = 5;
+const COMMAND_BUFFER_LENGTH = 3;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -129,18 +129,16 @@ let viewModel = new class ViewModel {
 
     commit() {
         while (this.commandBuffer.length < COMMAND_BUFFER_LENGTH) {
-            this.commandBuffer.push('skip');
+            this.move('skip');
         }
-        socket.emit("command", this.commandBuffer);
-        this.commandBuffer.splice(0, this.commandBuffer.length);
-        this.updateMarker();
     }
 
     move(command) {
         this.commandBuffer.push(command);
         if (this.commandBuffer.length == COMMAND_BUFFER_LENGTH) {
             socket.emit("command", this.commandBuffer);
-            this.commandBuffer.splice(0, this.commandBuffer.length);
+            var send_commands = this.commandBuffer.splice(0, this.commandBuffer.length);
+            this.state.players[socket.id].commands.push(...send_commands);
         }
         this.updateMarker();
     }
@@ -250,10 +248,10 @@ let viewModel = new class ViewModel {
             const c = commands[index];
 
             /**
-             * 
-             * @param {SpriteTypes} type 
-             * @param {{x:number,y:number}} position 
-             * @param {Direction} direction 
+             *
+             * @param {SpriteTypes} type
+             * @param {{x:number,y:number}} position
+             * @param {Direction} direction
              * @param {boolean} searchfromback searchess the last index
              */
 
@@ -1560,13 +1558,18 @@ function setSpriteVisibility(sprite, visible) {
     await viewModel.init();
     connectToServer();
     setInterval(() => {
-        if (theBigMessageBuffer.length > 0) {
+        let round = theBigMessageBuffer.length ? theBigMessageBuffer[0].data.round : -1;
+        while(theBigMessageBuffer.length) {
             var message = theBigMessageBuffer.shift();
+
+            if (message.data.round > round)
+                break;
+
             console.log("processing " + message.type + ". Messages left: " + theBigMessageBuffer.length + " messages");
             processMessages(message);
             console.log("done");
         }
-    }, 500);
+    }, 2000);
 })();
 
 //#endregion
