@@ -794,6 +794,7 @@ var theBigMessageBuffer = [];
 
 function connectToServer() {
     socket = io();
+
     socket.onAny((type, data) => {
         console.log("received " + type);
         let packet = { type, data };
@@ -803,37 +804,34 @@ function connectToServer() {
             processMessages(packet);
         }
     });
+
+    // on connect
+    socket.on('connect', () => {
+        console.log(`[IO] Connected`);
+        viewModel.id = socket.id;
+        viewModel.messages.push(`Connected to Server`);
+
+        let name = localStorage.getItem("playerName");
+        if (name) {
+            socket.emit("name change message", name);
+        }
+    });
+
+    // on disconnect
+    socket.on('disconnect', (reason) => {
+        console.log(`[IO] Disconnected: ${reason}`);
+        viewModel.messages.push(`Disconnected from Server: ${reason}`);
+        if (reason === "io server disconnect") {
+            // the disconnection was initiated by the server, you need to reconnect manually
+            socket.connect();
+        }
+    });
 }
 
 function processMessages({type, data}) {
 
     console.log(`[IO] Received ${type} ${data}: `);
     switch (type) {
-        // on connect
-        case 'connect':
-            {
-                console.log(`[IO] Connected`);
-                viewModel.id = socket.id;
-                viewModel.messages.push(`Connected to Server`);
-
-                let name = localStorage.getItem("playerName");
-                if (name) {
-                    socket.emit("name change message", name);
-                }
-            } break;
-
-        // on disconnect
-        case 'disconnect':
-            {
-                console.log(`[IO] Disconnected: ${data}`);
-                viewModel.messages.push(`Disconnected from Server: ${data}`);
-                if (data === "io server disconnect") {
-                    // the disconnection was initiated by the server, you need to reconnect manually
-                    socket.connect();
-                }
-            } break;
-
-        // log everything
         // handle chat messages
         case 'chat message': {
             var {from, msg} = data;
@@ -843,6 +841,7 @@ function processMessages({type, data}) {
             // showNotification(text, 1000);
         } break;
 
+        // update logic
         case 'update': {
             var serverState = data;
             console.log("[SERVER STATE]: ", serverState);
@@ -850,48 +849,8 @@ function processMessages({type, data}) {
             console.log("[STATE]: ", viewModel.state);
         } break;
     }
-
-    //    // on connect
-    //    socket.on('connect', () => {
-    //        console.log(`[IO] Connected`);
-    //        viewModel.id = socket.id;
-    //        viewModel.messages.push(`Connected to Server`);
-    //
-    //        let name = localStorage.getItem("playerName");
-    //        if (name) {
-    //            socket.emit("name change message", name);
-    //        }
-    //    });
-    //    }
-    //
-    //    // on disconnect
-    //    socket.on('disconnect', (reason) => {
-    //        console.log(`[IO] Disconnected: ${reason}`);
-    //        viewModel.messages.push(`Disconnected from Server: ${reason}`);
-    //        if (reason === "io server disconnect") {
-    //            // the disconnection was initiated by the server, you need to reconnect manually
-    //            socket.connect();
-    //        }
-    //    });
-    //
-    //    // log everything
-    //    socket.onAny((message, ...args) => {
-    //        console.log(`[IO] Received ${message}: `, ...args);
-    //    });
-    //
-    //    // handle chat messages
-    //    socket.on('chat message', function ({ from, msg }) {
-    //        let text = `${from}: ${msg}`;
-    //        viewModel.messages.push(text);
-    //        showNotification(text, 1000);
-    //    });
-    //
-    //    socket.on('update', (serverState) => {
-    //        console.log("[SERVER STATE]: ", serverState);
-    //        viewModel.update(serverState);
-    //        console.log("[STATE]: ", viewModel.state);
-    //    })
 }
+
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1597,7 +1556,6 @@ function setSpriteVisibility(sprite, visible) {
     setTimeout(() => showNotification(null, 2000), 1000);
     await viewModel.init();
     connectToServer();
-    viewModel.move("skip");
     setInterval(() => {
         let round = theBigMessageBuffer.length ? theBigMessageBuffer[0].data.round : -1;
         while (theBigMessageBuffer.length) {
