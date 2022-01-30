@@ -605,6 +605,7 @@ var form = document.getElementById('form');
 var input = document.getElementById('input');
 var name_change_input = document.getElementById('name_change_input');
 
+var uiMain = document.getElementById('main');
 var uiMessages = document.getElementById('messages');
 var uiUserId = document.getElementById('userId');
 var uiRound = document.getElementById('round');
@@ -683,17 +684,16 @@ const keyMap = {
     "q": { action: () => viewModel.move("turn_left") },
     "e": { action: () => viewModel.move("turn_right") },
     " ": { action: () => viewModel.uiAction("fire") },
-    "Control": { action: () => viewModel.move("hole") },
-    "Alt": { action: () => viewModel.move("fill") },
+    "r": { action: () => viewModel.move("hole") },
+    "f": { action: () => viewModel.move("fill") },
+    "Enter": { action: () => viewModel.uiAction("commit") },
+    "Backspace": { action: () => viewModel.uiAction("undo") },
+    "Control": { action: () => viewModel.move("skip") },
 };
-document.body.addEventListener('keypress', (evt) => { evt.preventDefault(); });
-document.body.addEventListener('keyup', (evt) => {
-    console.log(evt);
-    evt.preventDefault();
-    evt.stopPropagation();
-    keyMap[evt.key]?.action();
 
-    return false;
+uiMain.addEventListener('keyup', (evt) => {
+    evt.preventDefault();
+    keyMap[evt.key]?.action();
 });
 
 // round
