@@ -25,6 +25,9 @@
 
 .sprite.cursor {
     background-image: url("cursor.png");
+    
+    transition: top 0.4s  , left 0.4s;
+    transition-timing-function: ease-in-out;
 
     --frames: 3;
     opacity: 0.75;
