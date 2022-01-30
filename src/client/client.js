@@ -91,7 +91,7 @@ let viewModel = new class ViewModel {
     }
 
     async init() {
-        this.map = await loadMap("killzone", "./maps/killzone");
+        this.map = await loadMap("gannter", "./maps/killzone");
         await updateMap();
 
         //this.startTimer();

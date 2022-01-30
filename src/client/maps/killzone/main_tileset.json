@@ -10,6 +10,10 @@
  "tileheight":32,
  "tiles":[
         {
+         "id":17,
+         "probability":0.699999988079071
+        }, 
+        {
          "id":66,
          "probability":0.200000002980232
         }, 
@@ -49,7 +53,7 @@
                 }, 
                 {
                  "color":"#ff00d8",
-                 "name":"hole2",
+                 "name":"hole3",
                  "probability":1,
                  "properties":[
                         {
@@ -61,7 +65,7 @@
                 }, 
                 {
                  "color":"#ffff00",
-                 "name":"hole3",
+                 "name":"hole2",
                  "probability":1,
                  "properties":[
                         {
@@ -302,6 +306,14 @@
                 {
                  "tileid":62,
                  "wangid":[0, 1, 0, 1, 0, 1, 0, 5]
+                }, 
+                {
+                 "tileid":63,
+                 "wangid":[0, 1, 0, 5, 0, 1, 0, 5]
+                }, 
+                {
+                 "tileid":64,
+                 "wangid":[0, 5, 0, 1, 0, 5, 0, 1]
                 }, 
                 {
                  "tileid":66,
