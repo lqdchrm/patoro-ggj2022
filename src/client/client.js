@@ -14,8 +14,8 @@ import State from "./state.js";
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
 
-const COMMAND_BUFFER_LENGTH = 3;
-
+const COMMAND_BUFFER_LENGTH = 1;
+const NETWORK_INTERVAL = 500;
 
 ////////////////////////////////////////////////////////////////////////////////
 // ██╗   ██╗██╗███████╗██╗    ██╗███╗   ███╗ ██████╗ ██████╗ ███████╗██╗
@@ -1572,7 +1572,7 @@ function setSpriteVisibility(sprite, visible) {
             processMessages(message);
             console.log("done");
         }
-    }, 2000);
+    }, NETWORK_INTERVAL);
 })();
 
 //#endregion
