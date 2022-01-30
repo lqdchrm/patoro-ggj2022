@@ -245,6 +245,7 @@ let viewModel = new class ViewModel {
 
         const usedMarkers = [];
 
+
         for (let index = 0; index < commands.length; index++) {
             const c = commands[index];
 
@@ -278,24 +279,20 @@ let viewModel = new class ViewModel {
 
             switch (c) {
                 case 'left':
+                    getcurserSprite('cursor-move', vector, getDirectionsFromCommands(index));
                     vector.x -= 1;
-                    if (index < commands.length - 1) // ignore the last command
-                        getcurserSprite('cursor-move', vector, getDirectionsFromCommands(index));
                     break;
                 case 'right':
+                    getcurserSprite('cursor-move', vector, getDirectionsFromCommands(index));
                     vector.x += 1;
-                    if (index < commands.length - 1) // ignore the last command
-                        getcurserSprite('cursor-move', vector, getDirectionsFromCommands(index));
                     break;
                 case 'up':
+                    getcurserSprite('cursor-move', vector, getDirectionsFromCommands(index));
                     vector.y -= 1;
-                    if (index < commands.length - 1) // ignore the last command
-                        getcurserSprite('cursor-move', vector, getDirectionsFromCommands(index));
                     break;
                 case 'down':
+                    getcurserSprite('cursor-move', vector, getDirectionsFromCommands(index));
                     vector.y += 1;
-                    if (index < commands.length - 1) // ignore the last command
-                        getcurserSprite('cursor-move', vector, getDirectionsFromCommands(index));
                     break;
 
                 case 'hole':
