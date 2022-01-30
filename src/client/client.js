@@ -14,7 +14,7 @@ import State from "./state.js";
 //#endregion
 ////////////////////////////////////////////////////////////////////////////////
 
-const COMMAND_BUFFER_LENGTH = 5;
+const COMMAND_BUFFER_LENGTH = 1;
 const NETWORK_INTERVAL = 500;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -34,8 +34,9 @@ class PlayerViewModel {
         this.spawnPoint = spawnPoint;
         this.deaths = 0;
 
+        this.uiCommandBuffer = [];
+
         this.sprite = createSprite('robot', this.spawnPoint.x, this.spawnPoint.y, id, id === socket.id, this.getSpawnpintDirection(this.spawnPoint));
-        this.renderPromise = Promise.resolve();
     }
 
     setName(name) {
@@ -122,6 +123,9 @@ let viewModel = new class ViewModel {
         this.state = State.getState();  // game state
     }
 
+    get meVM() { return this.players[socket.id]; }
+    get meState() { return this.state.players[socket.id]; }
+
     async init() {
         this.map = await loadMap("gannter", "./maps/killzone");
         await updateMap();
@@ -146,7 +150,7 @@ let viewModel = new class ViewModel {
         if (this.commandBuffer.length == COMMAND_BUFFER_LENGTH) {
             var send_commands = this.commandBuffer.splice(0, 1);
             socket.emit("command", send_commands);
-            this.state.players[socket.id].commands.push(...send_commands);
+            this.meVM.uiCommandBuffer.push(...send_commands);
         }
         this.updateMarker();
     }
@@ -192,8 +196,8 @@ let viewModel = new class ViewModel {
         this.markers.forEach(x => setSpriteVisibility(x, false))
         const vector = { x: currentPlayer.x, y: currentPlayer.y };
 
-        const commands = [...this.state.players[socket.id].commands.slice(this.state.round), ...this.commandBuffer];
-
+        // const commands = [...this.state.players[socket.id].commands.slice(this.state.round), ...this.commandBuffer];
+        const commands = [...this.meVM.uiCommandBuffer.slice(this.state.round), ...this.commandBuffer];
 
         function getDirectionsFromCommands(index) {
             if (index < 0)
@@ -359,9 +363,11 @@ let viewModel = new class ViewModel {
         return spawnPoint;
     }
 
-    addNewPlayer(id) {
+    addNewPlayer(id, serverState) {
         let spawnPoint = this.calcSpawnPoint(id);
         this.players[id] = new PlayerViewModel(id, spawnPoint);
+        if (serverState.players[id].diedInRound !== null)
+            this.players[id].sprite.classList.add('dead');
     }
 
     removePlayer(id) {
@@ -541,6 +547,9 @@ let viewModel = new class ViewModel {
         // update moves
         let allPlayers = Object.keys(serverState.players).sort().map(id => serverState.players[id]);
 
+        // set all dead players
+        allPlayers.filter(x => x.diedInRound !== null & x.diedInRound <= serverState.round).forEach(player => this.players[player.id].sprite.classList.add("dead"));
+
         for (let round = this.state.round; round < serverState.round; ++round) {
             allPlayers.forEach(player => {
                 let move = round < player.commands.length ? player.commands[round] : null;
@@ -548,9 +557,7 @@ let viewModel = new class ViewModel {
                     this.handleMove(viewModel.map, player, move);
                 }
 
-                if (player.diedInRound !== null) {
-                    this.players[player.id].sprite.classList.add("dead");
-                }
+               
             });
             viewModel.fireballList.forEach((fireball, index, list) => {
                 var x = Number(fireball.style.getPropertyValue('--x'));
@@ -582,7 +589,8 @@ let viewModel = new class ViewModel {
         // store state
         this.state = serverState;
 
-        this.state.players
+        // sync commands
+        this.meVM.uiCommandBuffer.splice(0, this.meState.commands.length, ...this.meState.commands);
 
         // update UI
         this.updateUi();
@@ -1587,7 +1595,7 @@ function setSpriteVisibility(sprite, visible) {
     connectToServer();
     setInterval(() => {
         let round = theBigMessageBuffer.length ? theBigMessageBuffer[0].data.round : -1;
-        while(theBigMessageBuffer.length) {
+        while (theBigMessageBuffer.length) {
             var message = theBigMessageBuffer.shift();
 
             if (message.data.round > round)
