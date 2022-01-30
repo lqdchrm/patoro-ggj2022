@@ -4,8 +4,24 @@
     --theme-text: black;
 }
 
+
+@font-face {
+    font-family: SpaceGalaxy;
+    /*From https://www.fontspace.com/space-galaxy-font-f25799 Public Domain*/
+    src: url('SpaceGalaxyRegularFonty-RlOl.ttf') format('truetype')
+        /* src: url('exo.light.otf') format('opentype') */
+}
+
+@font-face {
+    font-family: Exo;
+    /*From https://www.1001fonts.com/exo-font.html SIL Open Font License (OLF)*/
+    src: url('exo.light.otf') format('opentype')
+}
+
+
 * {
     box-sizing: border-box;
+    font-family: SpaceGalaxy;
 }
 
 html,
@@ -21,6 +37,7 @@ body {
     0% {
         background-position: 0px 0px;
     }
+
     100% {
         background-position: -1024px -1024px;
     }
@@ -125,7 +142,7 @@ body>* {
     color: var(--theme-hl);
 }
 
-.topbar > * {
+.topbar>* {
     position: relative;
     flex: 0 1 auto;
     display: block;
@@ -133,11 +150,17 @@ body>* {
 
 #stats {
     width: 300px;
+    margin: 8px;
+    margin-bottom: 4px;
+    align-self: center;
 }
 
 #player_list_div {
     flex: 0 1 auto;
     justify-self: flex-end;
+    margin: 8px;
+    margin-bottom: 4px;
+    align-self: center;
 }
 
 .spacer {
@@ -171,7 +194,7 @@ body>* {
     min-width: 70px;
     flex: 0 1 auto;
     background: linear-gradient(135deg, var(--theme-hl), var(--theme));
-    border-radius: 3px;
+    border-radius: 8px;
     color: var(--theme-text);
     font-weight: bolder;
 }
@@ -274,7 +297,7 @@ body>* {
 }
 
 #form input {
-    background: rgba(0,0,0,0.7);
+    background: rgba(0, 0, 0, 0.7);
     border: none;
     padding: 0 1rem;
     flex-grow: 1;
