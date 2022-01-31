@@ -8,7 +8,7 @@ Have fun 💕
 
 ## Test it on Heroku
 
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/lqdchrm/patoro-ggj2022)
 
 ## Build
 
