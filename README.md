@@ -6,6 +6,10 @@ A game by PaToRo done at the Global Game Jam Trier 2022.
 
 Have fun 💕
 
+## Test it on Heroku
+
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+
 ## Build
 
 ```bash
