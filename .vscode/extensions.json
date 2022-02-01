@@ -1,18 +1,6 @@
 {
     "recommendations": [
         "bitbelt.converttoasciiart",
-        "bierner.comment-tagged-templates",
-        "editorconfig.editorconfig",
-        "mhutchie.git-graph",
-        "donjayamanne.githistory",
-        "eamodio.gitlens",
-        "vincaslt.highlight-matching-tag",
-        "brunnerh.insert-unicode",
-        "eg2.vscode-npm-script",
-        "christian-kohler.npm-intellisense",
-        "spmeesseman.vscode-taskexplorer",
-        "pflannery.vscode-versionlens",
-        "vscode-icons-team.vscode-icons",
-        "tyriar.luna-paint"
+        "editorconfig.editorconfig" 
     ]
 }
