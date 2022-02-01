@@ -530,11 +530,11 @@ let viewModel = new class ViewModel {
                     fire_button_text.textContent = "Reload " + (local_player.reloading - 1);
                     if (local_player.hasSuperPower) {
                         local_player.hasSuperPower = false;
-                        var direction = getSpriteDirection(local_player.sprite)
-                        var move = directionToVector(direction);
-                        var left = { x: move.y, y: -1 * move.x };
-                        var right = { x: -left.x, y: -left.y };
-                        var start = { x: local_player.x + 5 * left.x, y: local_player.y + 5 * left.y };
+                        const direction = getSpriteDirection(local_player.sprite)
+                        const move = directionToVector(direction);
+                        const left = { x: move.y, y: -1 * move.x };
+                        const right = { x: -left.x, y: -left.y };
+                        const start = { x: local_player.x + 5 * left.x, y: local_player.y + 5 * left.y };
                         for (let i = -5; i <= 5; i++) {
                             var fireball = createSprite("fireball", local_player.x, local_player.y);
                             setSpritePos(fireball, { x: start.x, y: start.y }, direction);
@@ -544,7 +544,7 @@ let viewModel = new class ViewModel {
                         }
                     }
                     else {
-                        var fireball = createSprite("fireball", local_player.x, local_player.y);
+                        const fireball = createSprite("fireball", local_player.x, local_player.y);
                         setSpritePos(fireball, { x: local_player.x, y: local_player.y },
                             getSpriteDirection(local_player.sprite));
                         viewModel.fireballList.push(fireball);
